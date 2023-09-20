@@ -3,6 +3,7 @@ import hashlib
 import pygame
 
 from Input import Inputs
+import Saving
 
 
 def hash_seed(seed):
@@ -35,7 +36,7 @@ def get_save_game_name(screen, available_save_games):
                 input_active = False
         elif Inputs.is_key_pressed(pygame.K_BACKSPACE):
             save_game_name = save_game_name[:-1]
-        else:
+        elif len(save_game_name) < 20:
             save_game_name += Inputs.get_unicode()
 
         screen.fill((0, 0, 0))
@@ -49,15 +50,31 @@ def get_save_game_name(screen, available_save_games):
         button = pygame.Rect(10, 110, 800, 30)
         pygame.draw.rect(screen, (100, 100, 100), button, 1)
 
-        note_text_1 = font.render("Available saved games (click to load):", True, (255, 0, 0))
+        note_text_1 = font.render("Available saved games (click to load):", True, (180, 180, 180))
         screen.blit(note_text_1, (10, 180))
 
         # List all existing save games
         for index, existing_game_save in enumerate(available_save_games):
-            save_game_text = font.render(existing_game_save, True, (0, 255, 0))
-            screen.blit(save_game_text, (10, 210 + (index * 30)))
-            # draw a rect over the save game
-            button = pygame.Rect(10, 210 + (index * 30), 400, 30)
+            save = Saving.load_save_game(existing_game_save)
+
+            # Split the text into two parts
+            name_text = font.render(existing_game_save, True, (210, 210, 210))
+            info_text = font.render(f"(room {save.dungeon_room_index + 1}, {save.player_health} health)", True, (210, 210, 210))
+
+            # Get rectangles for both texts
+            name_rect = name_text.get_rect()
+            info_rect = info_text.get_rect()
+
+            # Set the positions
+            name_rect.topleft = (10, 210 + (index * 30))
+            info_rect.topleft = (280, name_rect.top)  # Info starts at the same x-coordinate as the name
+
+            # Blit both texts
+            screen.blit(name_text, name_rect)
+            screen.blit(info_text, info_rect)
+
+            # draw a rect over the save game (use name_rect for positioning)
+            button = pygame.Rect(name_rect.left, name_rect.top, 530, 30)
             pygame.draw.rect(screen, (100, 100, 100), button, 1)
             if Inputs.is_mouse_button_pressed(1):
                 if button.collidepoint(Inputs.get_mouse_position()):

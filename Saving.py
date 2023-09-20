@@ -2,8 +2,8 @@ import json
 import os
 from typing import List
 
-from Cards import CardData
-from Utils import hash_seed
+import Cards
+import Utils
 
 SAVE_FOLDER = "save-game-folder"
 
@@ -14,7 +14,7 @@ class GameSave:
         self.dungeon_seed: int = dungeon_seed
         self.dungeon_room_index: int = dungeon_room_index
         self.player_health: int = player_health
-        self.player_cards: List[CardData] = player_cards
+        self.player_cards: List[Cards.CardData] = player_cards
 
     def to_dict(self):
         return {
@@ -32,7 +32,7 @@ class GameSave:
             data["dungeon_seed"],
             data["dungeon_room_index"],
             data["player_health"],
-            [CardData.from_dict(card_data) for card_data in data["player_cards"]]
+            [Cards.CardData.from_dict(card_data) for card_data in data["player_cards"]]
         )
 
 
@@ -66,10 +66,10 @@ def load_save_game(save_game_name):
         # Create the default cards
         player_cards = []
         for i in range(2):
-            player_cards.append(CardData("Strike", "Deal 6 damage", 6, 0, 1, "Data/Sprites/Cards/strike.png"))
-            player_cards.append(CardData("Defend", "Gain 5 block", 0, 5, 1, "Data/Sprites/Cards/defend.png"))
+            player_cards.append(Cards.CardData("Strike", "Deal 6 damage", 6, 0, 1, "Data/Sprites/Cards/strike.png"))
+            player_cards.append(Cards.CardData("Defend", "Gain 5 block", 0, 5, 1, "Data/Sprites/Cards/defend.png"))
 
-        return GameSave(save_game_name, hash_seed(save_game_name), 0, 100, player_cards)
+        return GameSave(save_game_name, Utils.hash_seed(save_game_name), 0, 100, player_cards)
 
 
 def delete_save_game(save_game_name):
