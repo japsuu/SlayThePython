@@ -18,8 +18,8 @@ class GameState:
         self.current_player_mana: int = 0
         self.current_player_block: int = 0
         self.current_targeted_enemy: EnemyCharacter = None
+        self.current_hand: List[GameCard] = []
         self.current_draw_pile: List[CardData] = []
-        self.current_hand_cards: List[GameCard] = []
         self.current_discard_pile: List[CardData] = []
         self.current_reward_cards: List[GameCard] = []
         self.current_alive_enemies: List[EnemyCharacter] = []
@@ -37,18 +37,30 @@ class GameState:
         available_save_games = list_available_save_games()
         self.current_game_save = load_save_game(get_save_game_name(pygame.display.get_surface(), available_save_games))
         self.is_players_turn = True
-        self.current_hand_cards.clear()
+        self.current_hand.clear()
+        self.current_draw_pile.clear()
+        self.current_discard_pile.clear()
         self.current_alive_enemies.clear()
-        self.randomize_reward_cards()
+        # Move cards from save to draw pile
+        for card in self.current_game_save.player_cards:
+            self.current_draw_pile.append(card)
         self.initialize_new_room(self.current_game_save.dungeon_room_index)
         save_game(self.current_game_save)
 
     def save(self):
+        self.update_save_cards()
         save_game(self.current_game_save)
 
     def save_and_exit_current_save(self):
         self.save()
         self.current_game_save = None
+
+    def update_save_cards(self):
+        self.current_game_save.player_cards.clear()
+        for card in self.current_discard_pile:
+            self.current_game_save.player_cards.append(card)
+        for card in self.current_draw_pile:
+            self.current_game_save.player_cards.append(card)
 
     def delete_current_save(self):
         delete_save_game(self.current_game_save.save_game_name)
@@ -56,10 +68,13 @@ class GameState:
     def load_next_room(self):
         # Player wins, let the player choose cards and increment the room index
         self.current_game_save.dungeon_room_index += 1
-        self.randomize_reward_cards()
         self.initialize_new_room(self.current_game_save.dungeon_room_index)
 
     def initialize_new_room(self, room_index: int):
+        # Move the discard pile to draw pile
+        self.prepare_draw_pile()
+
+        self.randomize_reward_cards()
         self.initialize_player_turn()
 
         # If the room is the boss room, spawn the boss
@@ -98,16 +113,29 @@ class GameState:
             self.current_targeted_enemy = self.current_alive_enemies[0]
 
     def initialize_player_turn(self):
+        self.player_draw_new_hand_cards()
         self.current_player_mana = 3
         self.current_player_block = 0
         self.is_players_turn = True
-        self.player_draw_cards()
 
-    def player_draw_cards(self):
-        self.current_hand_cards.clear()
+    def prepare_draw_pile(self):
+        for card in self.current_discard_pile:
+            self.current_draw_pile.append(card)
+        self.current_discard_pile.clear()
+
+    def player_draw_new_hand_cards(self):
+        self.current_hand.clear()
         card_count = 5
+        # Check if draw pile has enough cards
+        if len(self.current_draw_pile) < card_count:
+            self.prepare_draw_pile()
+
+        # If there's still not enough cards, then limit the card count
+        if len(self.current_draw_pile) < card_count:
+            card_count = len(self.current_draw_pile)
+
         # Select x random cards from player's deck
-        selections = random.choices(self.current_game_save.player_cards, k=card_count)
+        selections = random.sample(self.current_draw_pile, k=card_count)    # Use random.sample instead of random.choices to prevent duplicates
         for index, selection in enumerate(selections):
             # Evenly distribute the cards at the bottom of the screen
             width_total = pygame.display.get_surface().get_width()
@@ -116,7 +144,9 @@ class GameState:
             spacing = card_visuals_width / (card_count - 1)
             x = start + (index * spacing)
             y = pygame.display.get_surface().get_height() - 0.08 * pygame.display.get_surface().get_height()
-            self.current_hand_cards.append(GameCard(selection, x, y))
+            self.current_hand.append(GameCard(selection, x, y))
+            self.current_draw_pile.remove(selection)
+            self.current_discard_pile.append(selection)
 
     def randomize_reward_cards(self):
         self.current_reward_cards.clear()

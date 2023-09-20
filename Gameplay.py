@@ -47,7 +47,7 @@ def gameloop_update(screen: pygame.Surface, game_state: GameState):
                 enemy.draw_intentions(screen, game_state, game_state.current_round_index)
 
             # Draw the player's hand
-            for hand_card in game_state.current_hand_cards:
+            for hand_card in game_state.current_hand:
                 hand_card.draw(screen)
                 # Color the card's mana cost red if the player can't afford it
                 if can_use_card(game_state, hand_card):
@@ -57,7 +57,7 @@ def gameloop_update(screen: pygame.Surface, game_state: GameState):
 
             # If the mouse is over a card, move that card up a bit while moving the other cards down a bit
             hovered_card_index = -1
-            for index, hand_card in enumerate(reversed(game_state.current_hand_cards)):
+            for index, hand_card in enumerate(reversed(game_state.current_hand)):
                 if not hand_card.marked_for_cleanup:
                     # Create new rect that goes to bottom of the screen, so hit detection "feels" intuitive.
                     full_screen_rect = pygame.Rect(hand_card.rect.left, hand_card.rect.top, hand_card.rect.width, screen.get_height())
@@ -70,7 +70,7 @@ def gameloop_update(screen: pygame.Surface, game_state: GameState):
             # Update the player's hand (Check if the player clicked a card)
             # Use reverse iteration to get the top-most (actually visible and clicked) card TODO: Merge with the loop above if possible.
             card_played = False
-            for index, hand_card in enumerate(reversed(game_state.current_hand_cards)):
+            for index, hand_card in enumerate(reversed(game_state.current_hand)):
                 if can_use_card(game_state, hand_card):
                     if not hand_card.marked_for_cleanup:
                         if (not card_played) and Inputs.is_mouse_button_pressed(1):
@@ -103,10 +103,10 @@ def gameloop_update(screen: pygame.Surface, game_state: GameState):
 
 
 def clean_up_finished_animations(game_state: GameState):
-    for hand_card in game_state.current_hand_cards:
+    for hand_card in game_state.current_hand:
         # If the card is marked for cleanup, delete it
         if hand_card.should_delete():
-            game_state.current_hand_cards.remove(hand_card)
+            game_state.current_hand.remove(hand_card)
 
 
 def draw_enemies(screen: pygame.Surface, game_state: GameState):
@@ -165,7 +165,7 @@ def player_choose_rewards(screen: pygame.Surface, game_state: GameState):
         if Inputs.is_mouse_button_pressed(1):
             if card.rect.collidepoint(Inputs.get_mouse_position()):
                 # Card clicked, add it to the player's deck
-                game_state.current_game_save.player_cards.append(card.card_data)
+                game_state.current_draw_pile.append(card.card_data)
                 game_state.is_player_choosing_rewards = False
                 game_state.load_next_room()
                 game_state.save()

@@ -65,7 +65,7 @@ def load_save_game(save_game_name):
         # If no GameSave with the name is found, return a new GameSave with default values.
         # Create the default cards
         player_cards = []
-        for i in range(5):
+        for i in range(2):
             player_cards.append(CardData("Strike", "Deal 6 damage", 6, 0, 1, "Data/Sprites/Cards/strike.png"))
             player_cards.append(CardData("Defend", "Gain 5 block", 0, 5, 1, "Data/Sprites/Cards/defend.png"))
 
