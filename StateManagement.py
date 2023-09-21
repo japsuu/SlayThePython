@@ -11,8 +11,10 @@ import Utils
 
 
 class GameState:
-    def __init__(self):
+    def __init__(self, screen: pygame.Surface):
+        self.frame_buffer = FrameBuffer(screen)
         self.game_data = GameData()
+        self.screen = screen
         self.current_game_save: Saving.GameSave = None
         self.current_round_index: int = 0
         self.current_player_mana: int = 0
@@ -88,8 +90,8 @@ class GameState:
             padding = 0
             enemy_width = 256
 
-            screen_width = pygame.display.get_surface().get_width()
-            screen_height = pygame.display.get_surface().get_height()
+            screen_width = self.screen.get_width()
+            screen_height = self.screen.get_height()
 
             # Calculate the total width of the images and padding
             total_width = enemy_count * enemy_width + (enemy_count - 1) * padding
@@ -274,3 +276,44 @@ class GameData:
             return self.icon_intention_damage_high
         else:
             return self.icon_intention_damage_veryhigh
+
+
+class FrameBuffer:
+    def __init__(self, screen: pygame.Surface):
+        self.screen = screen
+        # Drawables are tuples of (surface, position)
+        # The position is relative to the top left corner of the screen
+        # The drawables are sorted by layer, then by order of drawing
+        # We could also use some kind of insert function to insert drawables at a specific index of a list, but this is simpler for a small project
+        self.drawables_background_0:    List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.drawables_background_ui:   List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.drawables_midground_0:     List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.drawables_midground_ui:    List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.drawables_foreground_0:    List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.drawables_foreground_ui:   List[tuple[pygame.Surface, tuple[int, int]]] = []
+        self.overlay_ui:                List[tuple[pygame.Surface, tuple[int, int]]] = []
+
+    def draw(self):
+        for drawable in self.drawables_background_0:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.drawables_background_ui:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.drawables_midground_0:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.drawables_midground_ui:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.drawables_foreground_0:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.drawables_foreground_ui:
+            self.screen.blit(drawable[0], drawable[1])
+        for drawable in self.overlay_ui:
+            self.screen.blit(drawable[0], drawable[1])
+
+    def clear(self):
+        self.drawables_background_0.clear()
+        self.drawables_background_ui.clear()
+        self.drawables_midground_0.clear()
+        self.drawables_midground_ui.clear()
+        self.drawables_foreground_0.clear()
+        self.drawables_foreground_ui.clear()
+        self.overlay_ui.clear()

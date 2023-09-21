@@ -17,7 +17,7 @@ def main():
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Slay the Python")
     clock = pygame.time.Clock()
-    game_state = GameState()
+    game_state = GameState(screen)
 
     running = True
     while running:
@@ -28,6 +28,7 @@ def main():
 
         # Clear the screen
         screen.fill("black")
+        game_state.frame_buffer.clear()
 
         if game_state.current_game_save is not None:
             # Update the window title
@@ -43,6 +44,8 @@ def main():
 
         # Update and draw the game loop
         gameloop_update(screen, game_state)
+
+        game_state.frame_buffer.draw()
 
         # Update and draw visual effects
         for effect in game_state.active_visual_effects:
