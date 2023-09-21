@@ -4,7 +4,8 @@ from typing import List
 
 import pygame
 
-from Effects import VisualEffect
+import StateManagement
+import Effects
 
 
 def load_available_enemies():
@@ -166,9 +167,9 @@ class EnemyCharacter(pygame.sprite.Sprite):
 
         # Draw the current block
         if has_block:
-            block_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_block_small.get_width(), game_state.game_data.icon_block_small.get_height())
+            block_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_intention_block.get_width(), game_state.game_data.icon_intention_block.get_height())
             block_icon_rect.midright = health_bar_rect.midleft
-            screen.blit(game_state.game_data.icon_block_small, block_icon_rect)
+            screen.blit(game_state.game_data.icon_intention_block, block_icon_rect)
 
             block_text_color = (100, 255, 255)  # Light blue
             block_text_surface = self.block_font.render(f"{self.current_block}", True, block_text_color)
@@ -192,7 +193,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
         # Draw a damage effect
         random_slash_effect = random.choice(game_state.game_data.slash_effects_list)
         effect_rect = self.rect.center
-        new_effect = VisualEffect(random_slash_effect, effect_rect, 1000)
+        new_effect = Effects.VisualEffect(random_slash_effect, effect_rect, 1000)
         game_state.active_visual_effects.append(new_effect)
 
     def gain_health(self, amount):
@@ -230,24 +231,25 @@ class EnemyCharacter(pygame.sprite.Sprite):
         has_shown_intentions = False
         next_rect_pos: tuple[int, int] = self.health_bar_background_rect.topleft
         if intentions.gain_health_amount > 0:
-            health_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_health_small.get_width(), game_state.game_data.icon_health_small.get_height())
+            health_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_intention_buff.get_width(), game_state.game_data.icon_intention_buff.get_height())
             health_icon_rect.bottomleft = next_rect_pos
             next_rect_pos = health_icon_rect.bottomright
-            screen.blit(game_state.game_data.icon_health_small, health_icon_rect)
+            screen.blit(game_state.game_data.icon_intention_buff, health_icon_rect)
             has_shown_intentions = True
         if intentions.gain_block_amount > 0:
-            block_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_block_small.get_width(), game_state.game_data.icon_block_small.get_height())
+            block_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_intention_block.get_width(), game_state.game_data.icon_intention_block.get_height())
             block_icon_rect.bottomleft = next_rect_pos
             next_rect_pos = block_icon_rect.bottomright
-            screen.blit(game_state.game_data.icon_block_small, block_icon_rect)
+            screen.blit(game_state.game_data.icon_intention_block, block_icon_rect)
             has_shown_intentions = True
         if intentions.deal_damage_amount > 0:
-            attack_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_attack_small.get_width(), game_state.game_data.icon_attack_small.get_height())
+            attack_icon = game_state.game_data.get_damage_icon_from_damage_amount(intentions.deal_damage_amount)
+            attack_icon_rect = pygame.Rect(0, 0, attack_icon.get_width(), attack_icon.get_height())
             attack_icon_rect.bottomleft = next_rect_pos
             next_rect_pos = attack_icon_rect.bottomright
-            screen.blit(game_state.game_data.icon_attack_small, attack_icon_rect)
+            screen.blit(attack_icon, attack_icon_rect)
             has_shown_intentions = True
         if not has_shown_intentions:  # If no intentions are shown, display the "unknown intentions" icon
-            unknown_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_unknown.get_width(), game_state.game_data.icon_unknown.get_height())
+            unknown_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_intention_unknown.get_width(), game_state.game_data.icon_intention_unknown.get_height())
             unknown_icon_rect.bottomleft = next_rect_pos
-            screen.blit(game_state.game_data.icon_unknown, unknown_icon_rect)
+            screen.blit(game_state.game_data.icon_intention_unknown, unknown_icon_rect)

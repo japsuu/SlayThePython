@@ -120,9 +120,9 @@ def draw_enemies(screen: pygame.Surface, game_state: GameState):
         enemy.draw(screen, game_state)
         # If the enemy has been selected as the current target, draw an icon above it
         if enemy == game_state.current_targeted_enemy:
-            target_icon_rect = (game_state.current_targeted_enemy.rect.centerx - game_state.game_data.icon_in_combat.get_width() / 2,
-                                game_state.current_targeted_enemy.rect.top - game_state.game_data.icon_in_combat.get_width() / 2 - 60)
-            screen.blit(game_state.game_data.icon_in_combat, target_icon_rect)
+            target_icon_rect = (game_state.current_targeted_enemy.rect.centerx - game_state.game_data.icon_target.get_width() / 2,
+                                game_state.current_targeted_enemy.rect.top - game_state.game_data.icon_target.get_width() / 2 - 60)
+            screen.blit(game_state.game_data.icon_target, target_icon_rect)
         # If the player clicks the enemy, select it as the current target
         elif Inputs.is_mouse_button_pressed(1):
             if enemy.rect.collidepoint(Inputs.get_mouse_position()):
