@@ -1,4 +1,5 @@
 import hashlib
+import random
 
 import pygame
 
@@ -20,6 +21,16 @@ def lerp(a: float, b: float, t: float) -> float:
         4.2 == lerp(1, 5, 0.8)
     """
     return (1 - t) * a + t * b
+
+
+def get_random_inside_unit_rect() -> tuple[float, float]:
+    """Returns a random point inside a unit rectangle.
+    The unit rect is a square with both sides' width as 1, centered at (0, 0).
+    """
+    # Get a random point inside a unit square
+    x = random.random() * 2 - 1
+    y = random.random() * 2 - 1
+    return x, y
 
 
 def get_save_game_name(screen, available_save_games):

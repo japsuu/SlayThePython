@@ -44,6 +44,13 @@ def main():
         # Update and draw the game loop
         gameloop_update(screen, game_state)
 
+        # Update and draw visual effects
+        for effect in game_state.active_visual_effects:
+            if effect.update():
+                game_state.active_visual_effects.remove(effect)  # Remove expired effects
+            else:
+                effect.draw(screen)
+
         pygame.display.flip()
 
         # Limit FPS to 60

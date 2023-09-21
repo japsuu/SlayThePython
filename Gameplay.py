@@ -10,12 +10,6 @@ from StateManagement import GameState
 # NOTE: A state machine would be better for this, but I'm too lazy to implement one for an otherwise small project :)
 def gameloop_update(screen: pygame.Surface, game_state: GameState):
     clean_up_finished_animations(game_state)
-    # Update and draw visual effects
-    for effect in game_state.active_visual_effects:
-        if effect.update():
-            game_state.active_visual_effects.remove(effect)  # Remove expired effects
-        else:
-            effect.draw(screen)
 
     if is_main_menu_button_pressed():
         game_state.save_and_exit_current_save()
@@ -121,7 +115,7 @@ def draw_enemies(screen: pygame.Surface, game_state: GameState):
         # If the enemy has been selected as the current target, draw an icon above it
         if enemy == game_state.current_targeted_enemy:
             target_icon_rect = (game_state.current_targeted_enemy.rect.centerx - game_state.game_data.icon_target.get_width() / 2,
-                                game_state.current_targeted_enemy.rect.top - game_state.game_data.icon_target.get_width() / 2 - 60)
+                                game_state.current_targeted_enemy.rect.top - game_state.game_data.icon_target.get_width() / 2 - 100)
             screen.blit(game_state.game_data.icon_target, target_icon_rect)
         # If the player clicks the enemy, select it as the current target
         elif Inputs.is_mouse_button_pressed(1):

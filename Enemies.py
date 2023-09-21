@@ -6,6 +6,7 @@ import pygame
 
 import StateManagement
 import Effects
+import Utils
 
 
 def load_available_enemies():
@@ -127,6 +128,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
         self.lerp_progress = 0
         self.damaged = False
         self.font = pygame.font.Font(None, 36)
+        self.damage_effect_font = pygame.font.Font(None, 55)
         self.block_font = pygame.font.Font(None, 25)
         self.text_color = (255, 255, 255)
         health_bar_background_width = int(self.rect.width / 2)
@@ -171,7 +173,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
             block_icon_rect.midright = health_bar_rect.midleft
             screen.blit(game_state.game_data.icon_intention_block, block_icon_rect)
 
-            block_text_color = (100, 255, 255)  # Light blue
+            block_text_color = (0, 0, 0)
             block_text_surface = self.block_font.render(f"{self.current_block}", True, block_text_color)
             block_text_rect = block_text_surface.get_rect()
             block_text_rect.center = block_icon_rect.center
@@ -192,8 +194,17 @@ class EnemyCharacter(pygame.sprite.Sprite):
 
         # Draw a damage effect
         random_slash_effect = random.choice(game_state.game_data.slash_effects_list)
-        effect_rect = self.rect.center
-        new_effect = Effects.VisualEffect(random_slash_effect, effect_rect, 1000)
+        effect_pos = self.rect.center
+        new_effect = Effects.VisualEffect(random_slash_effect, effect_pos, 1000)
+        game_state.active_visual_effects.append(new_effect)
+
+        # Draw a damage number effect
+        damage_text_color = (255, 0, 0)
+        damage_text_surface = self.damage_effect_font.render(f"-{amount}", True, damage_text_color)
+        damage_text_rect = damage_text_surface.get_rect()
+        offset = Utils.get_random_inside_unit_rect() * 100
+        damage_text_rect.center = (self.rect.center[0] + offset[0], self.rect.center[1] + offset[1])
+        new_effect = Effects.VisualEffect(damage_text_surface, damage_text_rect.center, 4000)
         game_state.active_visual_effects.append(new_effect)
 
     def gain_health(self, amount):
@@ -248,6 +259,13 @@ class EnemyCharacter(pygame.sprite.Sprite):
             attack_icon_rect.bottomleft = next_rect_pos
             next_rect_pos = attack_icon_rect.bottomright
             screen.blit(attack_icon, attack_icon_rect)
+
+            text_color = (255, 255, 255)
+            text_surface = self.block_font.render(f"{intentions.deal_damage_amount}", True, text_color)
+            text_rect = text_surface.get_rect()
+            text_rect.center = (attack_icon_rect.left + 20, attack_icon_rect.bottom - 20)
+            screen.blit(text_surface, text_rect)
+
             has_shown_intentions = True
         if not has_shown_intentions:  # If no intentions are shown, display the "unknown intentions" icon
             unknown_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_intention_unknown.get_width(), game_state.game_data.icon_intention_unknown.get_height())

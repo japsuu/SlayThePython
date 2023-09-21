@@ -171,6 +171,9 @@ class GameState:
         # Reduce current health by the damage amount
         if remaining_damage > 0:
             self.current_game_save.player_health = max(self.current_game_save.player_health - remaining_damage, 0)
+            effect_pos = (pygame.display.get_surface().get_width() // 2, pygame.display.get_surface().get_height() // 2)
+            new_effect = Effects.VisualEffect(self.game_data.effect_damaged_self, effect_pos, 1000)
+            self.active_visual_effects.append(new_effect)
 
     def remove_block(self, amount):
         self.current_player_block = max(self.current_player_block - amount, 0)
@@ -211,7 +214,7 @@ class GameData:
         self.icon_intention_damage_veryhigh: pygame.Surface = None
 
         # Effects
-        self.effect_damaged: pygame.Surface = None
+        self.effect_damaged_self: pygame.Surface = None
         self.slash_effects_list: List[pygame.Surface] = []
 
         # Initializing
@@ -254,7 +257,7 @@ class GameData:
 
     def load_effects(self):
         try:
-            self.effect_damaged = pygame.image.load("Data/Sprites/Effects/effect_damaged.png")
+            self.effect_damaged_self = pygame.image.load("Data/Sprites/Effects/effect_damaged_self.png")
             self.slash_effects_list.append(pygame.image.load("Data/Sprites/Effects/effect_slash_1.png"))
             self.slash_effects_list.append(pygame.image.load("Data/Sprites/Effects/effect_slash_2.png"))
             self.slash_effects_list.append(pygame.image.load("Data/Sprites/Effects/effect_slash_3.png"))
