@@ -45,7 +45,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
 
             # Draw the player's hand
             for hand_card in game_state.current_hand:
-                game_state.frame_buffer.add_drawable(hand_card, PLAYER_HAND_DRAW_ORDER)
+                game_state.frame_buffer.add_drawable(hand_card, Constants.PLAYER_HAND_DRAW_ORDER)
                 # Color the card's mana cost red if the player can't afford it
                 if can_use_card(game_state, hand_card):
                     hand_card.mana_cost_text_color = (0, 0, 0)
@@ -128,11 +128,11 @@ def check_assigned_target(game_state: GameState):
 
 def draw_enemies(game_state: GameState):
     for enemy in game_state.current_alive_enemies:
-        game_state.frame_buffer.add_drawable(enemy, ENEMY_DRAW_ORDER)
+        game_state.frame_buffer.add_drawable(enemy, Constants.ENEMY_DRAW_ORDER)
         # If the enemy has been selected as the current target, draw an icon above it
         if enemy == game_state.current_targeted_enemy:
             target_icon_pos = (game_state.current_targeted_enemy.rect.centerx - game_state.game_data.icon_target.get_width() / 2, game_state.current_targeted_enemy.rect.top - game_state.game_data.icon_target.get_width() / 2 - 100)
-            DrawCall(game_state.game_data.icon_target, target_icon_pos, TARGETED_ENEMY_ICON_DRAW_ORDER).queue(game_state)
+            DrawCall(game_state.game_data.icon_target, target_icon_pos, Constants.TARGETED_ENEMY_ICON_DRAW_ORDER).queue(game_state)
         # If the player clicks the enemy, select it as the current target
         elif Inputs.is_mouse_button_pressed(1):
             if enemy.rect.collidepoint(Inputs.get_mouse_position()):
@@ -167,11 +167,11 @@ def player_choose_rewards(screen: pygame.Surface, game_state: GameState):
     text_surface = font.render(f"Choose a card to add to your deck:", True, text_color)
     text_rect = text_surface.get_rect()
     text_rect.midtop = screen.get_rect().midtop
-    DrawCall(text_surface, text_rect, CARD_REWARD_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(text_surface, text_rect, Constants.CARD_REWARD_TEXT_DRAW_ORDER).queue(game_state)
 
     # Draw three cards to the center of the screen
     for card in game_state.current_reward_cards:
-        game_state.frame_buffer.add_drawable(card, CARD_REWARD_DRAW_ORDER)
+        game_state.frame_buffer.add_drawable(card, Constants.CARD_REWARD_DRAW_ORDER)
         if Inputs.is_mouse_button_pressed(1):
             if card.rect.collidepoint(Inputs.get_mouse_position()):
                 # Card clicked, add it to the player's deck
@@ -185,7 +185,7 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     font = pygame.font.Font(None, 45)
 
     mana_icon_rect = pygame.Rect(screen.get_rect().left, screen.get_rect().bottom - game_state.game_data.icon_mana.get_height(), game_state.game_data.icon_mana.get_width(), game_state.game_data.icon_mana.get_height())
-    DrawCall(game_state.game_data.icon_mana, mana_icon_rect, PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+    DrawCall(game_state.game_data.icon_mana, mana_icon_rect, Constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
 
     mana_text_color = (0, 0, 0)
     if game_state.current_player_mana < 1:
@@ -195,13 +195,13 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     mana_text_surface = font.render(f"{game_state.current_player_mana} / 3", True, mana_text_color)
     mana_text_rect = mana_text_surface.get_rect()
     mana_text_rect.center = mana_icon_rect.center
-    DrawCall(mana_text_surface, mana_text_rect, PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(mana_text_surface, mana_text_rect, Constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
 
     font = pygame.font.Font(None, 25)
 
     health_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_health.get_width(), game_state.game_data.icon_health.get_height())
     health_icon_rect.midbottom = mana_icon_rect.midtop
-    DrawCall(game_state.game_data.icon_health, health_icon_rect, PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+    DrawCall(game_state.game_data.icon_health, health_icon_rect, Constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
 
     health_text_color = (0, 0, 0)
     if game_state.current_game_save.player_health < 20:
@@ -211,12 +211,12 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     health_text_surface = font.render(f"{game_state.current_game_save.player_health} / 100", True, health_text_color)
     health_text_rect = health_text_surface.get_rect()
     health_text_rect.center = health_icon_rect.center
-    DrawCall(health_text_surface, health_text_rect, PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(health_text_surface, health_text_rect, Constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
 
     if game_state.current_player_block > 0:
         shield_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_block.get_width(), game_state.game_data.icon_block.get_height())
         shield_icon_rect.midbottom = health_icon_rect.midtop
-        DrawCall(game_state.game_data.icon_block, shield_icon_rect, PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+        DrawCall(game_state.game_data.icon_block, shield_icon_rect, Constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
 
         shield_text_color = (0, 0, 0)
         if game_state.current_player_block < 3:
@@ -224,7 +224,7 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
         shield_text_surface = font.render(f"{game_state.current_player_block}", True, shield_text_color)
         shield_text_rect = shield_text_surface.get_rect()
         shield_text_rect.center = shield_icon_rect.center
-        DrawCall(shield_text_surface, shield_text_rect, PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+        DrawCall(shield_text_surface, shield_text_rect, Constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
 
 
 def is_end_turn_button_pressed(game_state: GameState):
@@ -248,8 +248,8 @@ def is_end_turn_button_pressed(game_state: GameState):
     button_rect.bottomright = game_state.screen.get_rect().bottomright
     text_rect.center = button_rect.center
 
-    DrawCall(button_surface, button_rect, OVERRIDE_DRAW_ORDER_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, OVERRIDE_DRAW_ORDER_FG).queue(game_state)
+    DrawCall(button_surface, button_rect, Constants.OVERRIDE_DRAW_ORDER_BG).queue(game_state)
+    DrawCall(text_surface, text_rect, Constants.OVERRIDE_DRAW_ORDER_FG).queue(game_state)
 
     if Inputs.is_mouse_button_pressed(1):
         if button_rect.collidepoint(Inputs.get_mouse_position()):
@@ -280,8 +280,8 @@ def is_main_menu_button_pressed(game_state: GameState):
     button_rect.topleft = screen.get_rect().topleft
     text_rect.center = button_rect.center
 
-    DrawCall(button_surface, button_rect, OVERRIDE_DRAW_ORDER_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, OVERRIDE_DRAW_ORDER_FG).queue(game_state)
+    DrawCall(button_surface, button_rect, Constants.OVERRIDE_DRAW_ORDER_BG).queue(game_state)
+    DrawCall(text_surface, text_rect, Constants.OVERRIDE_DRAW_ORDER_FG).queue(game_state)
 
     if Inputs.is_mouse_button_pressed(1):
         if button_rect.collidepoint(Inputs.get_mouse_position()):
