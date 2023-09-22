@@ -23,14 +23,46 @@ def lerp(a: float, b: float, t: float) -> float:
     return (1 - t) * a + t * b
 
 
-def get_random_inside_unit_rect() -> tuple[float, float]:
+class ValueTween:
+    def __init__(self, start_value, end_value, duration):
+        self.start_value = start_value
+        self.current_value = start_value
+        self.end_value = end_value
+        self.duration: float = duration
+        self.elapsed_time: float = 0
+        self.is_finished = False
+
+    def update(self, dt):
+        self.elapsed_time += dt
+        if self.elapsed_time >= self.duration:
+            self.is_finished = True
+            self.current_value = self.end_value
+            return self.current_value
+
+        # Calculate the new draw_position and scale based on interpolation
+        progress = self.elapsed_time / self.duration
+        new_value = lerp(self.start_value, self.end_value, progress)
+
+        # Update the draw_position and scale
+        self.current_value = new_value
+        return self.current_value
+
+
+def get_random_inside_rect(rect_size) -> tuple[float, float]:
     """Returns a random point inside a unit rectangle.
     The unit rect is a square with both sides' width as 1, centered at (0, 0).
     """
     # Get a random point inside a unit square
-    x = random.random() * 2 - 1
-    y = random.random() * 2 - 1
+    x = (random.random() * 2 - 1) * rect_size
+    y = (random.random() * 2 - 1) * rect_size
     return x, y
+
+
+def load_image(path):
+    try:
+        return pygame.image.load(path)
+    except pygame.error as e:
+        print(f"Error loading image @ {path}: {str(e)}")
 
 
 def get_save_game_name(screen, available_save_games):

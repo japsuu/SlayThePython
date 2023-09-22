@@ -1,14 +1,14 @@
 #
 # Project: Slay the Python
 # Author: Jasper Honkasalo
-# Description: The main file of the game. Initializes the game and runs the game loop.
+# Description: Initializes the game and updates the main game loop.
 #
 
 import pygame
 
-from Gameplay import gameloop_update
+from Gameplay import update_gameloop
 from Input import Inputs
-from StateManagement import GameData, GameState
+from StateManagement import GameState
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Slay the Python")
     clock = pygame.time.Clock()
-    game_state = GameState(screen)
+    game_state = GameState(screen, clock)
 
     running = True
     while running:
@@ -28,6 +28,8 @@ def main():
 
         # Clear the screen
         screen.fill("black")
+
+        # Clear the frame buffer
         game_state.frame_buffer.clear()
 
         if game_state.current_game_save is not None:
@@ -43,21 +45,16 @@ def main():
             game_state.display_blocking_save_selection_screen()
 
         # Update and draw the game loop
-        gameloop_update(screen, game_state)
+        update_gameloop(screen, game_state)
 
+        # Draw the frame buffer
         game_state.frame_buffer.draw()
-
-        # Update and draw visual effects
-        for effect in game_state.active_visual_effects:
-            if effect.update():
-                game_state.active_visual_effects.remove(effect)  # Remove expired effects
-            else:
-                effect.draw(screen)
 
         pygame.display.flip()
 
         # Limit FPS to 60
         clock.tick(60)
+        game_state.delta_time = clock.get_time() / 1000
 
     pygame.quit()
 

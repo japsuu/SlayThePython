@@ -4,7 +4,6 @@ from typing import List
 
 import pygame
 
-import StateManagement
 import Effects
 import Utils
 
@@ -135,7 +134,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
         self.health_bar_background_rect = pygame.Rect(self.rect.left, self.rect.top - 10, health_bar_background_width, 5)
 
     def draw(self, screen, game_state):
-        # Draw the enemy sprite and health bar onto the screen
+        # Draw the enemy drawn_surface and health bar onto the screen
         self.update_damage_visuals()
         screen.blit(self.image, self.rect.topleft)
         screen.blit(self.damaged_image, self.rect.topleft)
@@ -148,7 +147,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
         health_ratio = self.current_health / self.max_health
         health_bar_width = int(self.rect.width / 2 * health_ratio)
 
-        # Define the health bar's dimensions and position
+        # Define the health bar's dimensions and position_or_rect
         health_bar_rect = pygame.Rect(self.rect.left, self.rect.top - 10, health_bar_width, 5)
 
         # Draw the actual health next to the health bar
@@ -183,10 +182,25 @@ class EnemyCharacter(pygame.sprite.Sprite):
         # Reduce current block by the damage amount
         remaining_damage = amount - self.current_block
         self.remove_block(amount)
+        removed_block = min(self.current_block, amount)
+
+        # Draw a "block lost" number effect
+        if removed_block > 0:
+            text_color = (0, 0, 255)
+            offset = Utils.get_random_inside_rect(100)
+            position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
+            new_effect = Effects.DamageVisualEffect(game_state, self.damage_effect_font, f"-{removed_block}", text_color, position, 3000)
+            game_state.active_visual_effects.append(new_effect)
 
         # Reduce current health by the damage amount
         if remaining_damage > 0:
             self.current_health -= remaining_damage
+            # Draw a damage number effect
+            text_color = (255, 0, 0)
+            offset = Utils.get_random_inside_rect(100)
+            position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
+            new_effect = Effects.DamageVisualEffect(game_state, self.damage_effect_font, f"-{removed_block}", text_color, position, 3000)
+            game_state.active_visual_effects.append(new_effect)
 
         # Trigger the damaged state and start the color lerp
         self.damaged = True
@@ -195,16 +209,7 @@ class EnemyCharacter(pygame.sprite.Sprite):
         # Draw a damage effect
         random_slash_effect = random.choice(game_state.game_data.slash_effects_list)
         effect_pos = self.rect.center
-        new_effect = Effects.VisualEffect(random_slash_effect, effect_pos, 1000)
-        game_state.active_visual_effects.append(new_effect)
-
-        # Draw a damage number effect
-        damage_text_color = (255, 0, 0)
-        damage_text_surface = self.damage_effect_font.render(f"-{amount}", True, damage_text_color)
-        damage_text_rect = damage_text_surface.get_rect()
-        offset = Utils.get_random_inside_unit_rect() * 100
-        damage_text_rect.center = (self.rect.center[0] + offset[0], self.rect.center[1] + offset[1])
-        new_effect = Effects.VisualEffect(damage_text_surface, damage_text_rect.center, 4000)
+        new_effect = Effects.VisualEffect(game_state, random_slash_effect, effect_pos, 1000)
         game_state.active_visual_effects.append(new_effect)
 
     def gain_health(self, amount):

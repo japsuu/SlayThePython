@@ -56,13 +56,13 @@ class CardData:
 
 
 class GameCard(pygame.sprite.Sprite):
-    def __init__(self, card_data, x, y):
+    def __init__(self, card_data, x: float, y: float):
         super().__init__()
         self.card_data: CardData = card_data
         self.image = pygame.image.load(self.card_data.sprite_path)
         self.rect = self.image.get_rect()
         self.original_position = (x, y)
-        self.target_position = (x, y)
+        self.target_position = self.original_position
         self.original_scale = (int(self.image.get_width()), int(self.image.get_height()))
         self.current_scale_factor = 1.0
         self.target_scale_factor = self.current_scale_factor
@@ -80,19 +80,18 @@ class GameCard(pygame.sprite.Sprite):
         # Flag to track if the card is selected (clicked)
         self.marked_for_cleanup = False
 
-    def draw(self, screen):
-
-        # Lerp position to target position
+    def draw(self, screen, game_state):
+        # Lerp position_or_rect to target position_or_rect
         if self.lerp_start_time is not None:
             current_time = pygame.time.get_ticks()
             elapsed_time = (current_time - self.lerp_start_time) / 1000  # Convert to seconds
 
-            # Calculate position lerping progress (0 to 1)
+            # Calculate position_or_rect lerping progress (0 to 1)
             pos_lerp_progress = elapsed_time / self.position_lerp_duration
             if pos_lerp_progress >= 1:
                 self.rect.center = self.target_position
             else:
-                # Lerp the card's position
+                # Lerp the card's position_or_rect
                 self.rect.center = pygame.math.Vector2(self.rect.center).lerp(self.target_position, pos_lerp_progress)
 
             # Calculate scale lerping progress (0 to 1)
@@ -105,7 +104,7 @@ class GameCard(pygame.sprite.Sprite):
 
         self.image = pygame.transform.scale(self.image, (self.original_scale[0] * self.current_scale_factor, self.original_scale[1] * self.current_scale_factor))
 
-        # Draw the card image onto the screen
+        # Draw the card drawn_surface onto the screen
         screen.blit(self.image, self.rect.topleft)
 
         # Create text surfaces for card stats
@@ -122,7 +121,7 @@ class GameCard(pygame.sprite.Sprite):
         card_description_rect.midtop = (self.rect.centerx, self.rect.bottom - 250)
         card_cost_rect.center = (self.rect.topleft[0] + 55, self.rect.topleft[1] + 55)
 
-        # Blit the text surfaces onto the card image
+        # Blit the text surfaces onto the card drawn_surface
         screen.blit(pygame.transform.scale(card_name_surface, (card_name_surface.get_width() * self.current_scale_factor, card_name_surface.get_height() * self.current_scale_factor)),
                     card_name_rect)
         screen.blit(pygame.transform.scale(card_description_surface,
@@ -131,9 +130,13 @@ class GameCard(pygame.sprite.Sprite):
         screen.blit(pygame.transform.scale(card_cost_surface, (card_cost_surface.get_width() * self.current_scale_factor, card_cost_surface.get_height() * self.current_scale_factor)),
                     card_cost_rect)
 
-    def set_target_position_and_scale(self, pos, scale: float, pos_lerp_duration: float = 0.5, scale_lerp_duration: float = 3):
+    def set_target_position_and_scale(self, pos: tuple[int, int], scale: float, pos_lerp_duration: float = 0.5, scale_lerp_duration: float = 3):
         if self.marked_for_cleanup:
             return
+
+        if pos == self.target_position and scale == self.target_scale_factor:
+            return
+
         self.target_position = pos
         self.target_scale_factor = scale
         self.position_lerp_duration = pos_lerp_duration
