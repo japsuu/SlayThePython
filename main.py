@@ -6,9 +6,9 @@
 
 import pygame
 
-from Gameplay import update_gameloop
-from Input import Inputs
-from StateManagement import GameState
+import utils
+from gameplay import update_gameloop
+from state_management import GameState
 
 
 def main():
@@ -21,9 +21,9 @@ def main():
 
     running = True
     while running:
-        Inputs.handle_input_events()
+        utils.Inputs.handle_input_events()
 
-        if Inputs.should_quit():
+        if utils.Inputs.should_quit():
             running = False
 
         # Clear the screen

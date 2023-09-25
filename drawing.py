@@ -7,29 +7,6 @@
 import pygame
 
 
-class FrameBuffer:
-    """
-    A buffer that stores drawables and draws them in order based on their draw order attribute.
-    The buffer is cleared at the end of each frame.
-    """
-    def __init__(self, screen: pygame.Surface):
-        self.screen = screen
-        self.drawables: list[Drawable] = []
-
-    def add_drawable(self, drawable):
-        self.drawables.append(drawable)
-
-    def draw(self):
-        # Sort the drawables based on their draw order attribute
-        sorted_drawables = sorted(self.drawables, key=lambda d: d.draw_order)
-
-        for drawable, _ in sorted_drawables:
-            drawable.draw(self.screen)
-
-    def clear(self):
-        self.drawables.clear()
-
-
 class Drawable:
     """
     An object that can be drawn to the screen.
@@ -44,6 +21,29 @@ class Drawable:
     def draw(self, screen: pygame.Surface):
         self.drawn_surface.set_alpha(self.alpha)
         screen.blit(self.drawn_surface, self.draw_position)
+
+
+class FrameBuffer:
+    """
+    A buffer that stores drawables and draws them in order based on their draw order attribute.
+    The buffer is cleared at the end of each frame.
+    """
+    def __init__(self, screen: pygame.Surface):
+        self.screen = screen
+        self.drawables: list[Drawable] = []
+
+    def add_drawable(self, drawable: Drawable):
+        self.drawables.append(drawable)
+
+    def draw(self):
+        # Sort the drawables based on their draw order attribute
+        sorted_drawables = sorted(self.drawables, key=lambda d: d.draw_order)
+
+        for drawable in sorted_drawables:
+            drawable.draw(self.screen)
+
+    def clear(self):
+        self.drawables.clear()
 
 
 class DrawCall(Drawable):
