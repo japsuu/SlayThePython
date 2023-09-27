@@ -1,41 +1,50 @@
-import random
-from typing import Optional, List
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
+import random
 import pygame
-import drawing
-import utils
+
+from data.cards import CardData
+from data.enemies import EnemySpawnData
+from data.saves import GameSave, display_blocking_save_selection_screen
+from game_objects import EnemyCharacter, GameCard, GameObjectCollection
+from utils import drawing
+from utils.io import ImageLibrary
+from utils.math import initialize_dungeon_random
+
+if TYPE_CHECKING:
+    from typing import Optional, List
 
 
 class GameState:
     def __init__(self, screen: pygame.Surface, clock: pygame.time.Clock):
-        self.frame_buffer = drawing.FrameBuffer(screen)
-        self.game_data = GameData()
-        self.screen = screen
+        self.frame_buffer: drawing.FrameBuffer = drawing.FrameBuffer(screen)
+        self.game_data: GameData = GameData()
+        self.screen: pygame.Surface = screen
         self.clock: pygame.time.Clock = clock
-        self.delta_time = 1 / 60
-        self.current_game_save: Optional[utils.GameSave] = None
+        self.delta_time: float = 1 / 60
+        self.current_game_save: Optional[GameSave] = None
         self.current_round_index: int = 0
         self.current_player_mana: int = 0
         self.current_player_block: int = 0
-        self.current_targeted_enemy_character = None
-        self.current_hand_game_cards = []
-        self.current_draw_pile: List[utils.CardData] = []
-        self.current_discard_pile = []
-        self.current_reward_game_cards = []
-        self.current_alive_enemy_characters = []
-        self.game_objects = []
+        self.current_targeted_enemy_character: Optional[EnemyCharacter] = None
+        self.current_hand_game_cards: List[GameCard] = []
+        self.current_draw_pile: List[CardData] = []
+        self.current_discard_pile: List[CardData] = []
+        self.current_reward_game_cards: List[GameCard] = []
+        self.current_alive_enemy_characters: List[EnemyCharacter] = []
+        self.game_object_collection: GameObjectCollection = GameObjectCollection()
         self.is_player_choosing_rewards: bool = False
-        self.is_battle_in_progress: bool = False
         self.is_players_turn: bool = False
 
-    def display_blocking_save_selection_screen(self):
+    def enter_main_menu(self):
         """
-        Displays a screen where the player can choose to load an existing save or create a new one.
+        Displays a debug_screen where the player can choose to load an existing save or create a new one.
         Warning: This function is blocking and will not return until the player has chosen a save.
         """
         pygame.display.set_caption("Slay the Python - Initializing...")
-        available_save_games = utils.list_available_save_games()
-        self.current_game_save = utils.load_save_game(utils.get_save_game_name(pygame.display.get_surface(), available_save_games))
+        available_save_games = GameSave.list_available_save_games()
+        self.current_game_save = GameSave.load_save_game(display_blocking_save_selection_screen(pygame.display.get_surface(), available_save_games))
         self.is_players_turn = True
         self.current_hand_game_cards.clear()
         self.current_draw_pile.clear()
@@ -45,11 +54,11 @@ class GameState:
         for card in self.current_game_save.player_cards:
             self.current_draw_pile.append(card)
         self.initialize_new_room(self.current_game_save.dungeon_room_index)
-        utils.save_game(self.current_game_save)
+        GameSave.save(self.current_game_save)
 
     def save(self):
         self.update_save_cards()
-        utils.save_game(self.current_game_save)
+        GameSave.save(self.current_game_save)
 
     def save_and_exit_current_save(self):
         self.save()
@@ -63,7 +72,7 @@ class GameState:
             self.current_game_save.player_cards.append(card)
 
     def delete_current_save(self):
-        utils.delete_save_game(self.current_game_save.save_game_name)
+        GameSave.delete_save_game(self.current_game_save.save_game_name)
 
     def load_next_room(self):
         # Player wins, let the player choose cards and increment the room index
@@ -71,6 +80,7 @@ class GameState:
         self.initialize_new_room(self.current_game_save.dungeon_room_index)
 
     def initialize_new_room(self, room_index: int):
+        initialize_dungeon_random(self.current_game_save.dungeon_seed, room_index)
         # Move the discard pile to draw pile
         self.prepare_draw_pile()
 
@@ -81,7 +91,9 @@ class GameState:
             boss = random.choice(self.game_data.available_boss_spawn_data)
             x = pygame.display.get_surface().get_width() / 2
             y = pygame.display.get_surface().get_height() / 2 - pygame.display.get_surface().get_height() * 0.1
-            self.current_alive_enemy_characters.append(utils.EnemyCharacter(self, boss, (x, y)))
+            new_enemy = EnemyCharacter((x, y), boss, self.game_data.image_library)
+            new_enemy.queue(self.game_object_collection)
+            self.current_alive_enemy_characters.append(new_enemy)
         else:  # Otherwise spawn normal enemies
             enemy_count = room_index + 1
             padding = 0
@@ -93,13 +105,13 @@ class GameState:
             # Calculate the total width of the images and padding
             total_width = enemy_count * enemy_width + (enemy_count - 1) * padding
 
-            # Calculate the starting position_or_rect from the center of the screen
+            # Calculate the starting position_or_rect from the center of the debug_screen
             start_position = (screen_width - total_width) / 2
 
             positions = []
 
             for i in range(enemy_count):
-                # Calculate the x position_or_rect biased to the center of the screen
+                # Calculate the x position_or_rect biased to the center of the debug_screen
                 x = start_position + (enemy_width + padding) * i + (enemy_width / 2)
 
                 y = screen_height / 2 - screen_height * 0.1
@@ -107,7 +119,9 @@ class GameState:
                 positions.append((x, y))
 
             for i, (x, y) in enumerate(positions):
-                self.current_alive_enemy_characters.append(utils.EnemyCharacter(self, random.choice(self.game_data.available_enemy_spawn_data), (x, y)))
+                new_enemy = EnemyCharacter((x, y), random.choice(self.game_data.available_enemy_spawn_data), self.game_data.image_library)
+                new_enemy.queue(self.game_object_collection)
+                self.current_alive_enemy_characters.append(new_enemy)
         if len(self.current_alive_enemy_characters) > 0:
             self.current_targeted_enemy_character = self.current_alive_enemy_characters[0]
 
@@ -136,14 +150,16 @@ class GameState:
         # Select x random cards from player's deck
         selections = random.sample(self.current_draw_pile, k=card_count)  # Use random.sample instead of random.choices to prevent duplicates
         for index, selection in enumerate(selections):
-            # Evenly distribute the cards at the bottom of the screen
+            # Evenly distribute the cards at the bottom of the debug_screen
             width_total = pygame.display.get_surface().get_width()
             card_visuals_width = width_total / 1.8
             start = (width_total - card_visuals_width) / 2
             spacing = card_visuals_width / (card_count - 1)
             x = start + (index * spacing)
             y = pygame.display.get_surface().get_height() - 0.08 * pygame.display.get_surface().get_height()
-            self.current_hand_game_cards.append(utils.GameCard(self, selection, (x, y)))
+            new_card = GameCard(self.screen.get_rect().bottomleft, self.screen.get_rect().bottomright, (x, y), selection)
+            new_card.queue(self.game_object_collection)
+            self.current_hand_game_cards.append(new_card)
             self.current_draw_pile.remove(selection)
             self.current_discard_pile.append(selection)
 
@@ -153,14 +169,16 @@ class GameState:
         # Select X random cards from all available cards
         selections = random.choices(self.game_data.available_cards, k=card_count)
         for index, selection in enumerate(selections):
-            # Evenly distribute the cards at the center of the screen
+            # Evenly distribute the cards at the center of the debug_screen
             width_total = pygame.display.get_surface().get_width()
             card_visuals_width = width_total / 1.8
             start = (width_total - card_visuals_width) / 2
             spacing = card_visuals_width / (card_count - 1)
             x = start + (index * spacing)
             y = pygame.display.get_surface().get_height() / 2
-            self.current_reward_game_cards.append(utils.GameCard(self, selection, (x, y)))
+            new_card = GameCard(self.screen.get_rect().bottomleft, self.screen.get_rect().bottomright, (x, y), selection)
+            new_card.queue(self.game_object_collection)
+            self.current_reward_game_cards.append(new_card)
 
     def remove_block(self, amount):
         self.current_player_block = max(self.current_player_block - amount, 0)
@@ -173,12 +191,12 @@ class GameState:
         return "IN_PROGRESS"
 
     def update_game_objects(self):
-        for game_object in self.game_objects:
+        for game_object in self.game_object_collection.game_objects:
             if game_object.is_active:
-                game_object.update()
+                game_object.update(self.delta_time)
                 self.frame_buffer.add_drawable(game_object)
             if game_object.is_awaiting_destruction:
-                self.game_objects.remove(game_object)
+                self.game_object_collection.remove(game_object)
 
 
 class GameData:
@@ -187,45 +205,11 @@ class GameData:
         self.BOSS_ROOM_INDEX: int = 4
 
         # Enemies
-        self.available_enemy_spawn_data = utils.load_available_enemies()
-        self.available_boss_spawn_data = utils.load_available_bosses()
+        self.available_enemy_spawn_data = EnemySpawnData.load_available_enemies()
+        self.available_boss_spawn_data = EnemySpawnData.load_available_bosses()
 
         # Cards
-        self.available_cards: List[utils.CardData] = utils.load_available_cards()
+        self.available_cards: List[CardData] = CardData.load_available_cards()
 
         # UI
-        self.icon_target: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_target.png")
-        self.icon_mana: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_mana.png")
-        icon_raw: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_block.png")
-        self.icon_block: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))   # TODO: Remove scaling
-        icon_raw: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_health.png")
-        self.icon_health: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))
-        icon_raw: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_attack.png")
-        self.icon_attack: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))
-        # Intention icons
-        self.icon_intention_block: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_block.png")
-        self.icon_intention_buff: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_buff.png")
-        self.icon_intention_unknown: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_unknown.png")
-        self.icon_intention_damage_low: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_damage_low.png")
-        self.icon_intention_damage_medium: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_damage_medium.png")
-        self.icon_intention_damage_high: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_damage_high.png")
-        self.icon_intention_damage_veryhigh: pygame.Surface = utils.load_image("Data/Sprites/UI/icon_intention_damage_veryhigh.png")
-
-        # Effects
-        self.effect_damaged_self: pygame.Surface = utils.load_image("Data/Sprites/Effects/effect_damaged_self.png")
-        self.slash_effects_list: List[pygame.Surface] = [
-            utils.load_image("Data/Sprites/Effects/effect_slash_1.png"),
-            utils.load_image("Data/Sprites/Effects/effect_slash_2.png"),
-            utils.load_image("Data/Sprites/Effects/effect_slash_3.png"),
-            utils.load_image("Data/Sprites/Effects/effect_slash_4.png")
-        ]
-
-    def get_damage_icon_from_damage_amount(self, damage: int) -> pygame.Surface:
-        if damage <= 5:
-            return self.icon_intention_damage_low
-        elif damage <= 10:
-            return self.icon_intention_damage_medium
-        elif damage <= 20:
-            return self.icon_intention_damage_high
-        else:
-            return self.icon_intention_damage_veryhigh
+        self.image_library = ImageLibrary()

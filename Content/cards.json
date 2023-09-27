@@ -5,7 +5,7 @@
     "card_damage": 5,
     "card_block": 0,
     "card_cost": 1,
-    "sprite_path": "Data/Sprites/Cards/strike.png"
+    "sprite_path": "Content/Sprites/Cards/strike.png"
   },
   {
     "card_name": "Test Defend",
@@ -13,6 +13,6 @@
     "card_damage": 0,
     "card_block": 5,
     "card_cost": 1,
-    "sprite_path": "Data/Sprites/Cards/defend.png"
+    "sprite_path": "Content/Sprites/Cards/defend.png"
   }
 ]

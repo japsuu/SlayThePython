@@ -1,9 +1,10 @@
 import pygame
-import constants
-from drawing import DrawCall
 
+from constants import LAYER_TARGETED_ENEMY_ICON, LAYER_CARD_REWARD_TEXT, LAYER_PLAYER_UI_BACKGROUND, LAYER_PLAYER_UI_TEXT, LAYER_OVERRIDE_BG, LAYER_OVERRIDE_FG
+from game_objects import GameCard, VisualEffect
 from state_management import GameState
-from utils import Inputs, GameCard, VisualEffect
+from utils.drawing import DrawCall
+from utils.input import Inputs
 
 
 def update_gameloop(screen: pygame.Surface, game_state: GameState):
@@ -41,7 +42,8 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
         if game_state.is_players_turn:
             # Display enemies' next round's intentions
             for enemy in game_state.current_alive_enemy_characters:
-                enemy.draw_intentions(screen, game_state, game_state.current_round_index)
+                # TODO: Move to EnemyCharacter.draw(), and manually update EnemyCharacter.current_round_index and EnemyCharacter.is_players_turn
+                enemy.draw_intentions(screen, game_state.current_round_index)
 
             # Draw the player's hand
             for hand_card in game_state.current_hand_game_cards:
@@ -53,9 +55,9 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
 
             hovered_card_vertical_offset = -200
             non_hovered_card_vertical_offset = 150
-            card_move_to_original_pos_duration = 1
-            card_move_up_duration = 0.3
-            non_hovered_card_duration = 3.8
+            card_move_to_original_pos_duration = 0.3
+            card_move_up_duration = 0.15
+            non_hovered_card_duration = 0.1
 
             # Update the player's hand (Check if the player clicked a card)
             # If the mouse is over a card, move that card up a bit while moving the other cards down a bit
@@ -73,6 +75,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
                             target_pos = (hand_card.original_position[0], hand_card.original_position[1] + hovered_card_vertical_offset)
                             hand_card.move_to(target_pos, card_move_up_duration)
                             hand_card.is_self_hovered = True
+                            hand_card.is_other_card_hovered = False
                     else:
                         if hand_card.is_self_hovered:
                             hand_card.move_to(hand_card.original_position, card_move_to_original_pos_duration)
@@ -111,7 +114,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
             # TODO: Add a delay between enemy intentions
             # Apply enemy intentions
             for enemy in game_state.current_alive_enemy_characters:
-                enemy_intention = enemy.get_intentions(game_state.current_round_index)
+                enemy_intention = enemy.get_intention(game_state.current_round_index)
                 if enemy_intention.gain_health_amount > 0:
                     enemy.gain_health(enemy_intention.gain_health_amount)
                 if enemy_intention.gain_block_amount > 0:
@@ -126,6 +129,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
 
 
 def damage_player(game_state, amount):
+    game_state: GameState
     # Reduce current block by the damage amount
     remaining_damage = amount - game_state.current_player_block
     game_state.remove_block(amount)
@@ -134,14 +138,16 @@ def damage_player(game_state, amount):
     if remaining_damage > 0:
         game_state.current_game_save.player_health = max(game_state.current_game_save.player_health - remaining_damage, 0)
         effect_pos = (pygame.display.get_surface().get_width() // 2, pygame.display.get_surface().get_height() // 2)
-        VisualEffect(game_state, game_state.game_data.effect_damaged_self, effect_pos, 1000)
+        effect = VisualEffect(game_state.game_data.image_library.effect_damaged_self, effect_pos, 1000)
+        effect.queue(game_state.game_object_collection)
 
 
 def clean_up_finished_animations(game_state: GameState):
-    for hand_card in game_state.current_hand_game_cards:
-        # If the card is marked for cleanup, delete it
-        if hand_card.is_awaiting_destruction:           # WARN: Possibly not needed, as the card can be instantly removed from the hand when played. The GameObject system should handle this.
-            game_state.current_hand_game_cards.remove(hand_card)
+    # for hand_card in game_state.current_hand_game_cards:
+    #     # If the card is marked for cleanup, delete it
+    #     if hand_card.is_awaiting_destruction:           # WARN: Possibly not needed, as the card can be instantly removed from the hand when played. The GameObject system should handle this.
+    #         game_state.current_hand_game_cards.remove(hand_card)
+    print(f"Hand cards: {len(game_state.current_hand_game_cards)}")
 
 
 def check_assigned_target(game_state: GameState):
@@ -156,9 +162,9 @@ def draw_enemies(game_state: GameState):
         game_state.frame_buffer.add_drawable(enemy)
         # If the enemy has been selected as the current target, draw an icon above it
         if enemy == game_state.current_targeted_enemy_character:
-            target_x = game_state.current_targeted_enemy_character.rect.centerx - game_state.game_data.icon_target.get_width() / 2
-            target_y = game_state.current_targeted_enemy_character.rect.top - game_state.game_data.icon_target.get_width() / 2 - 100
-            DrawCall(game_state.game_data.icon_target, (target_x, target_y), constants.TARGETED_ENEMY_ICON_DRAW_ORDER).queue(game_state)
+            target_x = game_state.current_targeted_enemy_character.rect.centerx - game_state.game_data.image_library.icon_target.get_width() / 2
+            target_y = game_state.current_targeted_enemy_character.rect.top - game_state.game_data.image_library.icon_target.get_width() / 2 - 100
+            DrawCall(game_state.game_data.image_library.icon_target, (target_x, target_y), LAYER_TARGETED_ENEMY_ICON).queue(game_state)
         # If the player clicks the enemy, select it as the current target
         elif Inputs.is_mouse_button_pressed(1):
             if enemy.rect.collidepoint(Inputs.get_mouse_position()):
@@ -176,7 +182,7 @@ def use_card(game_state: GameState, card: GameCard):
     game_state.current_player_block += card.card_data.card_block
     if card.card_data.card_damage > 0:
         if len(game_state.current_alive_enemy_characters) > 0:
-            game_state.current_targeted_enemy_character.take_damage(game_state, card.card_data.card_damage)
+            game_state.current_targeted_enemy_character.take_damage(card.card_data.card_damage)
             if game_state.current_targeted_enemy_character.current_health <= 0:
                 game_state.current_alive_enemy_characters.remove(game_state.current_targeted_enemy_character)
                 if len(game_state.current_alive_enemy_characters) > 0:
@@ -191,7 +197,7 @@ def player_choose_rewards(screen: pygame.Surface, game_state: GameState):
     text_surface = font.render(f"Choose a card to add to your deck:", True, text_color)
     text_rect = text_surface.get_rect()
     text_rect.midtop = screen.get_rect().midtop
-    DrawCall(text_surface, text_rect, constants.CARD_REWARD_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(text_surface, text_rect, LAYER_CARD_REWARD_TEXT).queue(game_state)
 
     # Draw three cards to the center of the screen
     for card in game_state.current_reward_game_cards:
@@ -200,6 +206,8 @@ def player_choose_rewards(screen: pygame.Surface, game_state: GameState):
                 # Card clicked, add it to the player's deck
                 game_state.current_draw_pile.append(card.card_data)
                 game_state.is_player_choosing_rewards = False
+                for reward_card in game_state.current_reward_game_cards:
+                    reward_card.destroy()
                 game_state.load_next_room()
                 game_state.save()
 
@@ -208,9 +216,9 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     font = pygame.font.Font(None, 45)
 
     left = screen.get_rect().left
-    top = screen.get_rect().bottom - game_state.game_data.icon_mana.get_height()
-    mana_icon_rect = pygame.Rect(left, top, game_state.game_data.icon_mana.get_width(), game_state.game_data.icon_mana.get_height())
-    DrawCall(game_state.game_data.icon_mana, mana_icon_rect, constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+    top = screen.get_rect().bottom - game_state.game_data.image_library.icon_mana.get_height()
+    mana_icon_rect = pygame.Rect(left, top, game_state.game_data.image_library.icon_mana.get_width(), game_state.game_data.image_library.icon_mana.get_height())
+    DrawCall(game_state.game_data.image_library.icon_mana, mana_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     mana_text_color = (0, 0, 0)
     if game_state.current_player_mana < 1:
@@ -220,13 +228,13 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     mana_text_surface = font.render(f"{game_state.current_player_mana} / 3", True, mana_text_color)
     mana_text_rect = mana_text_surface.get_rect()
     mana_text_rect.center = mana_icon_rect.center
-    DrawCall(mana_text_surface, mana_text_rect, constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(mana_text_surface, mana_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
     font = pygame.font.Font(None, 25)
 
-    health_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_health.get_width(), game_state.game_data.icon_health.get_height())
+    health_icon_rect = pygame.Rect(0, 0, game_state.game_data.image_library.icon_health.get_width(), game_state.game_data.image_library.icon_health.get_height())
     health_icon_rect.midbottom = mana_icon_rect.midtop
-    DrawCall(game_state.game_data.icon_health, health_icon_rect, constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+    DrawCall(game_state.game_data.image_library.icon_health, health_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     health_text_color = (0, 0, 0)
     if game_state.current_game_save.player_health < 20:
@@ -236,12 +244,12 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     health_text_surface = font.render(f"{game_state.current_game_save.player_health} / 100", True, health_text_color)
     health_text_rect = health_text_surface.get_rect()
     health_text_rect.center = health_icon_rect.center
-    DrawCall(health_text_surface, health_text_rect, constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+    DrawCall(health_text_surface, health_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
     if game_state.current_player_block > 0:
-        shield_icon_rect = pygame.Rect(0, 0, game_state.game_data.icon_block.get_width(), game_state.game_data.icon_block.get_height())
+        shield_icon_rect = pygame.Rect(0, 0, game_state.game_data.image_library.icon_block.get_width(), game_state.game_data.image_library.icon_block.get_height())
         shield_icon_rect.midbottom = health_icon_rect.midtop
-        DrawCall(game_state.game_data.icon_block, shield_icon_rect, constants.PLAYER_UI_BACKGROUND_DRAW_ORDER).queue(game_state)
+        DrawCall(game_state.game_data.image_library.icon_block, shield_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
         shield_text_color = (0, 0, 0)
         if game_state.current_player_block < 3:
@@ -249,7 +257,7 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
         shield_text_surface = font.render(f"{game_state.current_player_block}", True, shield_text_color)
         shield_text_rect = shield_text_surface.get_rect()
         shield_text_rect.center = shield_icon_rect.center
-        DrawCall(shield_text_surface, shield_text_rect, constants.PLAYER_UI_TEXT_DRAW_ORDER).queue(game_state)
+        DrawCall(shield_text_surface, shield_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
 
 def is_end_turn_button_pressed(game_state: GameState):
@@ -260,7 +268,7 @@ def is_end_turn_button_pressed(game_state: GameState):
     text_color = (255, 255, 255)  # White color
     font = pygame.font.Font(None, 36)  # You can adjust the card_info_font size
 
-    # Create the button drawn_surface
+    # Create the button sprite
     button_surface = pygame.Surface((button_width, button_height))
     button_surface.fill(button_color)
 
@@ -273,8 +281,8 @@ def is_end_turn_button_pressed(game_state: GameState):
     button_rect.bottomright = game_state.screen.get_rect().bottomright
     text_rect.center = button_rect.center
 
-    DrawCall(button_surface, button_rect, constants.OVERRIDE_DRAW_ORDER_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, constants.OVERRIDE_DRAW_ORDER_FG).queue(game_state)
+    DrawCall(button_surface, button_rect, LAYER_OVERRIDE_BG).queue(game_state)
+    DrawCall(text_surface, text_rect, LAYER_OVERRIDE_FG).queue(game_state)
 
     if Inputs.is_mouse_button_pressed(1):
         if button_rect.collidepoint(Inputs.get_mouse_position()):
@@ -292,7 +300,7 @@ def is_main_menu_button_pressed(game_state: GameState):
     text_color = (255, 255, 255)
     font = pygame.font.Font(None, 36)
 
-    # Create the button drawn_surface
+    # Create the button sprite
     button_surface = pygame.Surface((button_width, button_height))
     button_surface.fill(button_color)
 
@@ -305,8 +313,8 @@ def is_main_menu_button_pressed(game_state: GameState):
     button_rect.topleft = screen.get_rect().topleft
     text_rect.center = button_rect.center
 
-    DrawCall(button_surface, button_rect, constants.OVERRIDE_DRAW_ORDER_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, constants.OVERRIDE_DRAW_ORDER_FG).queue(game_state)
+    DrawCall(button_surface, button_rect, LAYER_OVERRIDE_BG).queue(game_state)
+    DrawCall(text_surface, text_rect, LAYER_OVERRIDE_FG).queue(game_state)
 
     if Inputs.is_mouse_button_pressed(1):
         if button_rect.collidepoint(Inputs.get_mouse_position()):

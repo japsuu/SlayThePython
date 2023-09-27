@@ -1,7 +1,7 @@
 #
 # Project: Slay the Python
 # Author: Jasper Honkasalo
-# Description: Contains classes for drawing to the screen.
+# Description: Contains classes for drawing to the debug_screen.
 #
 
 import pygame
@@ -9,14 +9,18 @@ import pygame
 
 class Drawable:
     """
-    An object that can be drawn to the screen.
+    An object that can be drawn to the debug_screen.
     Not automatically added to the frame buffer.
     """
     def __init__(self, drawn_surface: pygame.Surface, draw_position, draw_order: int, alpha=255):
-        self.drawn_surface = drawn_surface
-        self.draw_position = draw_position
-        self.alpha = alpha
-        self.draw_order = draw_order
+        self.drawn_surface: pygame.Surface = drawn_surface
+        """The surface that will be drawn to the debug_screen."""
+        self.draw_position: tuple = draw_position
+        """The card_position on the debug_screen where the drawn surface will be drawn."""
+        self.alpha: int = alpha
+        """The alpha value of the drawn surface."""
+        self.draw_order: int = draw_order
+        """The order in which this object will be drawn. Objects with a lower draw order will be drawn first."""
 
     def draw(self, screen: pygame.Surface):
         self.drawn_surface.set_alpha(self.alpha)

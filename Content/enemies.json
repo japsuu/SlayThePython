@@ -3,26 +3,26 @@
     "name": "Test Enemy 1",
     "max_health_min": 10,
     "max_health_max": 15,
-    "sprite_path": "Data/Sprites/Enemies/enemy.png",
-    "damaged_sprite_path": "Data/Sprites/Enemies/enemy_damaged.png",
+    "sprite_path": "Content/Sprites/Enemies/enemy.png",
+    "damaged_sprite_path": "Content/Sprites/Enemies/enemy_damaged.png",
     "intention_pattern": [
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 8,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 5,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       },
       {
         "gain_health_amount": 5,
         "gain_block_amount": 0,
         "deal_damage_amount": 12,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       }
     ]
   },
@@ -30,26 +30,26 @@
     "name": "Test Enemy 2",
     "max_health_min": 13,
     "max_health_max": 20,
-    "sprite_path": "Data/Sprites/Enemies/enemy.png",
-    "damaged_sprite_path": "Data/Sprites/Enemies/enemy_damaged.png",
+    "sprite_path": "Content/Sprites/Enemies/enemy.png",
+    "damaged_sprite_path": "Content/Sprites/Enemies/enemy_damaged.png",
     "intention_pattern": [
       {
         "gain_health_amount": 0,
         "gain_block_amount": 8,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 4,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 15,
-        "turn_sprite_path": "Data/Sprites/Enemies/enemy.png"
+        "turn_sprite_path": "Content/Sprites/Enemies/enemy.png"
       }
     ]
   }

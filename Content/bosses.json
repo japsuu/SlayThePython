@@ -3,38 +3,38 @@
     "name": "Test Boss 1",
     "max_health_min": 100,
     "max_health_max": 150,
-    "sprite_path": "Data/Sprites/Bosses/boss.png",
-    "damaged_sprite_path": "Data/Sprites/Bosses/boss_damaged.png",
+    "sprite_path": "Content/Sprites/Bosses/boss.png",
+    "damaged_sprite_path": "Content/Sprites/Bosses/boss_damaged.png",
     "intention_pattern": [
       {
         "gain_health_amount": 0,
         "gain_block_amount": 14,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 8,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 16,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 10,
         "gain_block_amount": 0,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 24,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       }
     ]
   },
@@ -42,38 +42,38 @@
     "name": "Test Boss 2",
     "max_health_min": 130,
     "max_health_max": 200,
-    "sprite_path": "Data/Sprites/Bosses/boss.png",
-    "damaged_sprite_path": "Data/Sprites/Bosses/boss_damaged.png",
+    "sprite_path": "Content/Sprites/Bosses/boss.png",
+    "damaged_sprite_path": "Content/Sprites/Bosses/boss_damaged.png",
     "intention_pattern": [
       {
         "gain_health_amount": 0,
         "gain_block_amount": 14,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 8,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 16,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 10,
         "gain_block_amount": 0,
         "deal_damage_amount": 0,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       },
       {
         "gain_health_amount": 0,
         "gain_block_amount": 0,
         "deal_damage_amount": 24,
-        "turn_sprite_path": "Data/Sprites/Bosses/boss.png"
+        "turn_sprite_path": "Content/Sprites/Bosses/boss.png"
       }
     ]
   }
