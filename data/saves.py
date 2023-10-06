@@ -15,11 +15,12 @@ if TYPE_CHECKING:
 
 
 class GameSave:
-    def __init__(self, save_game_name, dungeon_seed, dungeon_room_index, player_health, player_cards):
+    def __init__(self, save_game_name, dungeon_seed, dungeon_room_index, player_health, player_base_mana, player_cards):
         self.save_game_name: str = save_game_name
         self.dungeon_seed: int = dungeon_seed
         self.dungeon_room_index: int = dungeon_room_index
         self.player_health: int = player_health
+        self.player_base_mana: int = player_base_mana
         self.player_cards: List[CardData] = player_cards
 
     def to_dict(self):
@@ -28,6 +29,7 @@ class GameSave:
             "dungeon_seed": self.dungeon_seed,
             "dungeon_room_index": self.dungeon_room_index,
             "player_health": self.player_health,
+            "player_base_mana": self.player_base_mana,
             "player_cards": [card.to_dict() for card in self.player_cards]
         }
 
@@ -38,6 +40,7 @@ class GameSave:
             data["dungeon_seed"],
             data["dungeon_room_index"],
             data["player_health"],
+            data["player_base_mana"],
             [CardData.from_dict(card_data) for card_data in data["player_cards"]]
         )
 
@@ -47,7 +50,7 @@ class GameSave:
 
         filename = os.path.join(SAVE_GAME_FOLDER, f"{self.save_game_name}.json")
         with open(filename, "w") as file:
-            json.dump(self.to_dict(), file)
+            json.dump(self.to_dict(), file, indent=2)
 
     @staticmethod
     def load_save_game(save_game_name):
@@ -64,17 +67,18 @@ class GameSave:
             from constants import PLAYER_STARTING_CARDS, PLAYER_STARTING_HEALTH
             for card in PLAYER_STARTING_CARDS:
                 # Create a new CardData object with the same values as the original
-                new_card = CardData(card.card_name, card.card_description, card.card_damage, card.card_block, card.card_cost, card.sprite_path)
-                player_cards.append(new_card)
+                player_cards.append(card.copy())
 
             from utils.math import hash_string
-            return GameSave(save_game_name, hash_string(save_game_name), 0, PLAYER_STARTING_HEALTH, player_cards)
+            return GameSave(save_game_name, hash_string(save_game_name), 0, PLAYER_STARTING_HEALTH, 3, player_cards)
 
     @staticmethod
     def delete_save_game(save_game_name):
         filename = os.path.join(SAVE_GAME_FOLDER, f"{save_game_name}.json")
         if os.path.exists(filename):
             os.remove(filename)
+        else:
+            raise Exception(f"Could not delete save game {save_game_name}, because it does not exist.")
 
     @staticmethod
     def list_available_save_games():
@@ -125,7 +129,7 @@ def display_blocking_save_selection_screen(screen, available_save_games):
 
             # Split the text into two parts
             name_text = font.render(existing_game_save, True, (210, 210, 210))
-            info_text = font.render(f"(room {save.dungeon_room_index + 1}, {save.player_health} health)", True, (210, 210, 210))
+            info_text = font.render(f"(room {save.dungeon_room_index + 1}, {save.player_health} health, {len(save.player_cards)} cards)", True, (210, 210, 210))
 
             # Get rectangles for both texts
             name_rect = name_text.get_rect()
@@ -133,14 +137,13 @@ def display_blocking_save_selection_screen(screen, available_save_games):
 
             # Set the positions
             name_rect.topleft = (10, 210 + (index * 30))
-            info_rect.topleft = (280, name_rect.top)  # Info starts at the same x-coordinate as the name
+            info_rect.topleft = (280, name_rect.top)
 
             # Blit both texts
             screen.blit(name_text, name_rect)
             screen.blit(info_text, info_rect)
 
-            # draw a rect over the save game (use name_rect for positioning)
-            button = pygame.Rect(name_rect.left, name_rect.top, 530, 30)
+            button = pygame.Rect(name_rect.left, name_rect.top, 620, 30)
             pygame.draw.rect(screen, (100, 100, 100), button, 1)
             if Inputs.is_mouse_button_pressed(1):
                 if button.collidepoint(Inputs.get_mouse_position()):

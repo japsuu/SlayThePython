@@ -3,10 +3,7 @@ from data.cards import CardData
 SAVE_GAME_FOLDER = "GameSaves"
 
 PLAYER_STARTING_HEALTH = 100
-PLAYER_STARTING_CARDS = []
-for i in range(5):
-    PLAYER_STARTING_CARDS.append(CardData("Strike", "Deal 6 damage", 6, 0, 1, "Content/Sprites/Cards/strike.png"))
-    PLAYER_STARTING_CARDS.append(CardData("Defend", "Gain 5 block", 0, 5, 1, "Content/Sprites/Cards/defend.png"))
+PLAYER_STARTING_CARDS = CardData.load_starting_cards()
 
 # Layer draw order constants
 DRAW_ORDER_BACKGROUND = -1000
@@ -27,5 +24,6 @@ LAYER_CARD_REWARD = DRAW_ORDER_OVERLAY_UI
 LAYER_PLAYER_HAND = DRAW_ORDER_FOREGROUND
 LAYER_PLAYER_UI_BACKGROUND = DRAW_ORDER_OVERLAY_UI
 LAYER_PLAYER_UI_TEXT = DRAW_ORDER_OVERLAY_UI + 1
+LAYER_UI_EFFECTS = LAYER_PLAYER_UI_TEXT + 50
 LAYER_OVERRIDE_BG = 1000000
 LAYER_OVERRIDE_FG = LAYER_OVERRIDE_BG + 1

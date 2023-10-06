@@ -17,6 +17,9 @@ def load_image(path):
 class ImageLibrary:
     def __init__(self):
         # UI
+        self.icon_level: pygame.Surface = load_image("Content/Sprites/UI/icon_level.png")
+        self.icon_draw_pile: pygame.Surface = load_image("Content/Sprites/UI/icon_draw_pile.png")
+        self.icon_discard_pile: pygame.Surface = load_image("Content/Sprites/UI/icon_discard_pile.png")
         self.icon_target: pygame.Surface = load_image("Content/Sprites/UI/icon_target.png")
         self.icon_mana: pygame.Surface = load_image("Content/Sprites/UI/icon_mana.png")
         icon_raw: pygame.Surface = load_image("Content/Sprites/UI/icon_block.png")

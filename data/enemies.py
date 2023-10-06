@@ -60,35 +60,3 @@ class EnemySpawnData:
             data["damaged_sprite_path"],
             data["intention_pattern"]
         )
-
-    @staticmethod
-    def load_available_enemies():
-        enemy_spawn_data_list = []
-        file_path = "Content/enemies.json"
-        with open(file_path, "r") as file:
-            data = json.load(file)
-
-            for enemy_data in data:
-                enemy_spawn_data = EnemySpawnData.from_dict(enemy_data)
-                enemy_spawn_data_list.append(enemy_spawn_data)
-
-        return enemy_spawn_data_list
-
-    @staticmethod
-    def load_available_bosses():
-        boss_spawn_data_list = []
-        file_path = "Content/bosses.json"
-        try:
-            with open(file_path, "r") as file:
-                data = json.load(file)
-
-                for enemy_data in data:
-                    enemy_spawn_data = EnemySpawnData.from_dict(enemy_data)
-                    boss_spawn_data_list.append(enemy_spawn_data)
-
-        except FileNotFoundError:
-            print(f"File not found: {file_path}")
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON file: {file_path}")
-
-        return boss_spawn_data_list

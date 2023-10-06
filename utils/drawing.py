@@ -17,13 +17,10 @@ class Drawable:
         """The surface that will be drawn to the debug_screen."""
         self.draw_position: tuple = draw_position
         """The card_position on the debug_screen where the drawn surface will be drawn."""
-        self.alpha: int = alpha
-        """The alpha value of the drawn surface."""
         self.draw_order: int = draw_order
         """The order in which this object will be drawn. Objects with a lower draw order will be drawn first."""
 
     def draw(self, screen: pygame.Surface):
-        self.drawn_surface.set_alpha(self.alpha)
         screen.blit(self.drawn_surface, self.draw_position)
 
 
