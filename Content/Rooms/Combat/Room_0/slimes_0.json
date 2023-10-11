@@ -1,0 +1,66 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_0.png",
+  "room_enemies":
+  [
+    {
+      "name": "Small slime",
+      "max_health_min": 7,
+      "max_health_max": 10,
+      "sprite_path": "Content/Sprites/Enemies/slime_small.png",
+      "damaged_sprite_path": "Content/Sprites/Enemies/slime_small_damaged.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 3,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_small_attack.png"
+        },
+        {
+          "gain_health_amount": 3,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_small_buff.png"
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 4,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_small_attack.png"
+        }
+      ]
+    },
+    {
+      "name": "Large slime",
+      "max_health_min": 25,
+      "max_health_max": 30,
+      "sprite_path": "Content/Sprites/Enemies/slime_large.png",
+      "damaged_sprite_path": "Content/Sprites/Enemies/slime_large_damaged.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_large_attack.png"
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 3,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_large_attack.png"
+        },
+        {
+          "gain_health_amount": 3,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 3,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_large_buff.png"
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 0,
+          "turn_sprite_path": "Content/Sprites/Enemies/slime_large_buff.png"
+        }
+      ]
+    }
+  ]
+}
