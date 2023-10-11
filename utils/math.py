@@ -15,7 +15,8 @@ from utils import logging
 
 
 def get_random_inside_rect(rect_size) -> tuple[float, float]:
-    """Returns a random point inside a unit rectangle.
+    """
+    Returns a random point inside a unit rectangle.
     The unit rect is a square with both sides' width as 1, centered at (0, 0).
     """
     # Get a random point inside a unit square

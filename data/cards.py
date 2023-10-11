@@ -7,7 +7,23 @@ class CardData:
     # cards that affect block gain,
     # cards that affect damage dealt,
     # cards that affect damage taken,
-    def __init__(self, card_info_name, card_info_description, card_target_damage, card_target_remove_block, card_self_damage, card_self_block, card_self_heal, card_change_draw_limit, card_change_draw_limit_next_turn, card_change_mana_limit, card_change_mana_limit_permanent, card_change_mana, card_change_mana_next_turn, card_cost, exhaust, delete, sprite_path):
+    def __init__(self, card_info_name,
+                 card_info_description,
+                 card_target_damage,
+                 card_target_remove_block,
+                 card_self_damage,
+                 card_self_block,
+                 card_self_heal,
+                 card_change_draw_limit,
+                 card_change_draw_limit_next_turn,
+                 card_change_mana_limit,
+                 card_change_mana_limit_permanent,
+                 card_change_mana,
+                 card_change_mana_next_turn,
+                 card_cost,
+                 exhaust,
+                 delete,
+                 sprite_path):
         self.card_info_name: str = card_info_name
         self.card_info_description: str = card_info_description
         self.card_target_damage: int = card_target_damage

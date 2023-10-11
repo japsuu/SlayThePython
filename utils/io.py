@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import pygame
@@ -7,9 +8,24 @@ if TYPE_CHECKING:
     from typing import List
 
 
-def load_image(path):
+# def transform_resource_path(relative_path):     # PyInstaller support
+#     # noinspection PyBroadException
+#     try:
+#         # noinspection PyUnresolvedReferences,PyProtectedMember
+#         base_path = sys._MEIPASS
+#     except Exception:
+#         base_path = os.path.abspath(".")
+#
+#     return os.path.join(base_path, relative_path)
+
+
+def load_image(path, convert_alpha=True):
+    # asset_url = transform_resource_path(path)
     try:
-        return pygame.image.load(path)
+        img = pygame.image.load(path)
+        if convert_alpha:
+            return img.convert_alpha()
+        return img
     except pygame.error as e:
         raise SystemExit(f"Error loading image @ {path}: {str(e)}")
 
@@ -22,12 +38,8 @@ class ImageLibrary:
         self.icon_discard_pile: pygame.Surface = load_image("Content/Sprites/UI/icon_discard_pile.png")
         self.icon_target: pygame.Surface = load_image("Content/Sprites/UI/icon_target.png")
         self.icon_mana: pygame.Surface = load_image("Content/Sprites/UI/icon_mana.png")
-        icon_raw: pygame.Surface = load_image("Content/Sprites/UI/icon_block.png")
-        self.icon_block: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))   # TODO: Remove scaling
-        icon_raw: pygame.Surface = load_image("Content/Sprites/UI/icon_health.png")
-        self.icon_health: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))
-        icon_raw: pygame.Surface = load_image("Content/Sprites/UI/icon_attack.png")
-        self.icon_attack: pygame.Surface = pygame.transform.scale(icon_raw, (icon_raw.get_width() * 0.8, icon_raw.get_height() * 0.8))
+        self.icon_block: pygame.Surface = load_image("Content/Sprites/UI/icon_block.png")
+        self.icon_health: pygame.Surface = load_image("Content/Sprites/UI/icon_health.png")
         # Intention icons
         self.icon_intention_block: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_block.png")
         self.icon_intention_buff: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_buff.png")

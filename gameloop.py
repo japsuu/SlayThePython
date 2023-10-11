@@ -1,14 +1,14 @@
 import pygame
 
-from constants import LAYER_TARGETED_ENEMY_ICON, LAYER_CARD_REWARD_TEXT, LAYER_PLAYER_UI_BACKGROUND, LAYER_PLAYER_UI_TEXT, LAYER_OVERRIDE_BG, LAYER_OVERRIDE_FG, LAYER_UI_EFFECTS
+from utils.constants import LAYER_TARGETED_ENEMY_ICON, LAYER_CARD_REWARD_TEXT, LAYER_PLAYER_UI_BACKGROUND, LAYER_PLAYER_UI_TEXT, LAYER_OVERRIDE_BG, LAYER_OVERRIDE_FG, LAYER_UI_EFFECTS, \
+    FONT_CARD_REWARD, FONT_DUNGEON_LEVEL, FONT_DUNGEON_LEVEL_HINT, FONT_CARD_PILE_COUNT, FONT_PLAYER_MANA, FONT_PLAYER_HEALTH, FONT_PLAYER_BLOCK, FONT_BUTTON_GENERIC
 from game_objects import GameCard
 from state_management import GameState
 from utils.drawing import DrawCall
 from utils.input import Inputs
 
 
-def update_gameloop(screen: pygame.Surface, game_state: GameState):
-    screen.blit(game_state.current_room_background, (0, 0))
+def update(screen: pygame.Surface, game_state: GameState):
     game_state.update_game_objects()
 
     draw_damage_overlay(game_state)
@@ -63,7 +63,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
             for hand_card in game_state.current_hand_game_cards:
                 # Color the card's mana cost red if the player can't afford it
                 if can_play_card(game_state, hand_card):
-                    hand_card.card_info_mana_text_color = (0, 0, 0)
+                    hand_card.card_info_mana_text_color = (50, 50, 100)
                 else:
                     hand_card.card_info_mana_text_color = (255, 0, 0)
 
@@ -79,7 +79,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
             is_some_card_hovered = False
             for index, hand_card in enumerate(reversed(game_state.current_hand_game_cards)):
                 hand_card: GameCard
-                if not hand_card.has_been_played:
+                if (not hand_card.has_been_played) and hand_card.can_be_clicked:
                     # Create new rect that goes to bottom of the screen, so hit detection "feels" intuitive.
                     extended_rect = pygame.Rect(hand_card.rect.left, hand_card.rect.top, hand_card.rect.width, screen.get_height())
                     # If the card is hovered, move it up a bit
@@ -100,7 +100,7 @@ def update_gameloop(screen: pygame.Surface, game_state: GameState):
             card_played = False
             for hand_card in reversed(game_state.current_hand_game_cards):
                 hand_card: GameCard
-                if not hand_card.has_been_played:
+                if (not hand_card.has_been_played) and hand_card.can_be_clicked:
                     if can_play_card(game_state, hand_card):
                         # Check if the card was clicked
                         if (not card_played) and Inputs.is_mouse_button_pressed(1):
@@ -250,11 +250,10 @@ def play_card(game_state: GameState, card: GameCard):
 
 
 def player_choose_rewards(screen: pygame.Surface, game_state: GameState):
-    font = pygame.font.Font(None, 36)
     text_color = (255, 255, 255)
 
     # Draw the info text
-    text_surface = font.render(f"Choose a new card to add to your deck:", True, text_color)
+    text_surface = FONT_CARD_REWARD.render(f"Choose a new card to add to your deck:", True, text_color)
     text_rect = text_surface.get_rect()
     text_rect.midtop = screen.get_rect().midtop
     DrawCall(text_surface, text_rect, LAYER_CARD_REWARD_TEXT).queue(game_state)
@@ -281,14 +280,12 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     DrawCall(game_state.game_data.image_library.icon_level, level_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     # Draw current level text
-    font = pygame.font.Font(None, 45)
-    level_text_surface = font.render(f"{game_state.current_game_save.dungeon_room_index + 1} / {game_state.game_data.boss_room_index + 1}", True, (255, 255, 255))
+    level_text_surface = FONT_DUNGEON_LEVEL.render(f"{game_state.current_game_save.dungeon_room_index + 1} / {game_state.game_data.boss_room_index + 1}", True, (255, 255, 255))
     level_text_rect = level_text_surface.get_rect()
     level_text_rect.center = (level_icon_rect.centerx, level_icon_rect.centery)
     DrawCall(level_text_surface, level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
     if game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index:
-        font = pygame.font.Font(None, 25)
-        boss_level_text_surface = font.render("(boss room)", True, (255, 255, 255))
+        boss_level_text_surface = FONT_DUNGEON_LEVEL_HINT.render("(boss room)", True, (255, 255, 255))
         boss_level_text_rect = boss_level_text_surface.get_rect()
         boss_level_text_rect.midtop = level_text_rect.midbottom
         DrawCall(boss_level_text_surface, boss_level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
@@ -302,10 +299,9 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     DrawCall(game_state.game_data.image_library.icon_draw_pile, draw_pile_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     # Draw pile text
-    font = pygame.font.Font(None, 45)
-    draw_pile_text_surface = font.render(f"{len(game_state.current_draw_pile)}", True, (255, 255, 255))
+    draw_pile_text_surface = FONT_CARD_PILE_COUNT.render(f"{len(game_state.current_draw_pile)}", True, (255, 255, 255))
     draw_pile_text_rect = draw_pile_text_surface.get_rect()
-    draw_pile_text_rect.center = (draw_pile_icon_rect.centerx + 32, draw_pile_icon_rect.centery + 24)
+    draw_pile_text_rect.center = (draw_pile_icon_rect.centerx + 32, draw_pile_icon_rect.centery + 18)
     DrawCall(draw_pile_text_surface, draw_pile_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
     # Discard pile icon
@@ -317,10 +313,9 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     DrawCall(game_state.game_data.image_library.icon_discard_pile, discard_pile_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     # Discard pile text
-    font = pygame.font.Font(None, 45)
-    discard_pile_text_surface = font.render(f"{len(game_state.current_discard_pile)}", True, (255, 255, 255))
+    discard_pile_text_surface = FONT_CARD_PILE_COUNT.render(f"{len(game_state.current_discard_pile)}", True, (255, 255, 255))
     discard_pile_text_rect = discard_pile_text_surface.get_rect()
-    discard_pile_text_rect.center = (discard_pile_icon_rect.centerx - 32, discard_pile_icon_rect.centery + 22)
+    discard_pile_text_rect.center = (discard_pile_icon_rect.centerx - 32, discard_pile_icon_rect.centery + 18)
     DrawCall(discard_pile_text_surface, discard_pile_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
     # Mana icon
@@ -330,13 +325,12 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     DrawCall(game_state.game_data.image_library.icon_mana, mana_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     # Mana text
-    font = pygame.font.Font(None, 45)
     mana_text_color = (0, 0, 0)
     if game_state.current_player_mana < 1:
         mana_text_color = (255, 60, 60)
     elif game_state.current_player_mana < 2:
         mana_text_color = (140, 0, 0)
-    mana_text_surface = font.render(f"{game_state.current_player_mana} / 3", True, mana_text_color)
+    mana_text_surface = FONT_PLAYER_MANA.render(f"{game_state.current_player_mana} / 3", True, mana_text_color)
     mana_text_rect = mana_text_surface.get_rect()
     mana_text_rect.center = mana_icon_rect.center
     DrawCall(mana_text_surface, mana_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
@@ -347,13 +341,12 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     DrawCall(game_state.game_data.image_library.icon_health, health_icon_rect, LAYER_PLAYER_UI_BACKGROUND).queue(game_state)
 
     # Health text
-    font = pygame.font.Font(None, 35)
     health_text_color = (0, 0, 0)
     if game_state.current_game_save.player_health < 20:
         health_text_color = (255, 60, 60)
     elif game_state.current_game_save.player_health < 50:
         health_text_color = (140, 0, 0)
-    health_text_surface = font.render(f"{game_state.current_game_save.player_health}", True, health_text_color)
+    health_text_surface = FONT_PLAYER_HEALTH.render(f"{game_state.current_game_save.player_health}", True, health_text_color)
     health_text_rect = health_text_surface.get_rect()
     health_text_rect.center = health_icon_rect.center
     DrawCall(health_text_surface, health_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
@@ -366,102 +359,70 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
         shield_text_color = (0, 0, 0)
         if game_state.current_player_block < 3:
             shield_text_color = (255, 60, 60)
-        shield_text_surface = font.render(f"{game_state.current_player_block}", True, shield_text_color)
+        shield_text_surface = FONT_PLAYER_BLOCK.render(f"{game_state.current_player_block}", True, shield_text_color)
         shield_text_rect = shield_text_surface.get_rect()
         shield_text_rect.center = shield_icon_rect.center
         DrawCall(shield_text_surface, shield_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state)
 
 
 def is_end_turn_button_pressed(game_state: GameState):
-    # Define button properties
     button_width = 120
     button_height = 40
-    button_color = (0, 128, 0)  # Green color
-    text_color = (255, 255, 255)  # White color
-    font = pygame.font.Font(None, 36)  # You can adjust the card_info_font size
-
-    # Create the button sprite
-    button_surface = pygame.Surface((button_width, button_height))
-    button_surface.fill(button_color)
-
-    # Create the button text
-    text_surface = font.render("End Turn", True, text_color)
-
-    # Calculate button and text positions
-    button_rect = button_surface.get_rect()
-    text_rect = text_surface.get_rect()
-    button_rect.bottomright = (game_state.screen.get_rect().right, game_state.screen.get_rect().bottom - 200)
-    text_rect.center = button_rect.center
-
-    DrawCall(button_surface, button_rect, LAYER_OVERRIDE_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, LAYER_OVERRIDE_FG).queue(game_state)
-
-    if Inputs.is_mouse_button_pressed(1):
-        if button_rect.collidepoint(Inputs.get_mouse_position()):
-            return True
-
-    return False
+    rect = pygame.Rect(game_state.screen.get_rect().right - button_width - 5, game_state.screen.get_rect().bottom - 200, button_width, button_height)
+    if rect.collidepoint(Inputs.get_mouse_position()):
+        button_color = (0, 128, 0)
+    else:
+        button_color = (0, 200, 0)
+    text_color = (0, 50, 0)
+    rect = __draw_button(game_state, "End Turn", rect, button_color, text_color)
+    return __is_rect_clicked(rect)
 
 
 def is_main_menu_button_pressed(game_state: GameState):
-    screen = pygame.display.get_surface()
-    # Define button properties
     button_width = 180
     button_height = 40
-    button_color = (128, 0, 0)
-    text_color = (255, 255, 255)
-    font = pygame.font.Font(None, 36)
-
-    # Create the button sprite
-    button_surface = pygame.Surface((button_width, button_height))
-    button_surface.fill(button_color)
-
-    # Create the button text
-    text_surface = font.render("Main Menu", True, text_color)
-
-    # Calculate button and text positions
-    button_rect = button_surface.get_rect()
-    text_rect = text_surface.get_rect()
-    button_rect.topleft = screen.get_rect().topleft
-    text_rect.center = button_rect.center
-
-    DrawCall(button_surface, button_rect, LAYER_OVERRIDE_BG).queue(game_state)
-    DrawCall(text_surface, text_rect, LAYER_OVERRIDE_FG).queue(game_state)
-
-    if Inputs.is_mouse_button_pressed(1):
-        if button_rect.collidepoint(Inputs.get_mouse_position()):
-            return True
-
-    return False
+    rect = pygame.Rect(5, 5, button_width, button_height)
+    if rect.collidepoint(Inputs.get_mouse_position()):
+        button_color = (128, 0, 0)
+    else:
+        button_color = (200, 0, 0)
+    text_color = (50, 0, 0)
+    rect = __draw_button(game_state, "Main Menu", rect, button_color, text_color)
+    return __is_rect_clicked(rect)
 
 
 def is_abandon_button_pressed(game_state: GameState):
-    screen = pygame.display.get_surface()
-    # Define button properties
     button_width = 180
     button_height = 40
-    button_color = (128, 0, 0)
-    text_color = (255, 255, 255)
-    font = pygame.font.Font(None, 36)
+    rect = pygame.Rect(game_state.screen.get_rect().right - button_width - 5, 5, button_width, button_height)
+    if rect.collidepoint(Inputs.get_mouse_position()):
+        button_color = (128, 0, 0)
+    else:
+        button_color = (200, 0, 0)
+    text_color = (50, 0, 0)
+    rect = __draw_button(game_state, "Abandon run", rect, button_color, text_color)
+    return __is_rect_clicked(rect)
 
+
+def __draw_button(game_state: GameState, text: str, button_rect: pygame.Rect, button_color: tuple, text_color: tuple):
     # Create the button sprite
-    button_surface = pygame.Surface((button_width, button_height))
+    button_surface = pygame.Surface((button_rect.width, button_rect.height))
     button_surface.fill(button_color)
 
     # Create the button text
-    text_surface = font.render("Abandon run", True, text_color)
+    text_surface = FONT_BUTTON_GENERIC.render(text, True, text_color)
 
     # Calculate button and text positions
-    button_rect = button_surface.get_rect()
     text_rect = text_surface.get_rect()
-    button_rect.topright = screen.get_rect().topright
     text_rect.center = button_rect.center
 
     DrawCall(button_surface, button_rect, LAYER_OVERRIDE_BG).queue(game_state)
     DrawCall(text_surface, text_rect, LAYER_OVERRIDE_FG).queue(game_state)
+    return button_rect
 
+
+def __is_rect_clicked(rect: pygame.Rect):
     if Inputs.is_mouse_button_pressed(1):
-        if button_rect.collidepoint(Inputs.get_mouse_position()):
+        if rect.collidepoint(Inputs.get_mouse_position()):
             return True
-
     return False

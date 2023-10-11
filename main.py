@@ -3,12 +3,14 @@
 # Author: Jasper Honkasalo
 # Description: Initializes the game and updates the main game loop.
 #
+import time
 
 import pygame
 
 from utils import debugging
-from gameplay import update_gameloop
+from gameloop import update
 from state_management import GameState
+from utils.constants import FONT_HELP
 from utils.input import Inputs
 
 MAX_DELTA_TIME = 1 / 30
@@ -24,7 +26,6 @@ def main():
     pygame.display.set_caption("Slay the Python")
     clock = pygame.time.Clock()
     game_state = GameState(screen, clock)
-    help_font = pygame.font.Font(None, 22)
 
     debugging.initialize_debug_window(screen)
 
@@ -36,7 +37,10 @@ def main():
             running = False
 
         # Clear the debug_screen
-        screen.fill("black")
+        if game_state and game_state.current_room_background:
+            screen.blit(game_state.current_room_background, (0, 0))
+        else:
+            screen.fill("black")
 
         # Clear the frame buffer
         game_state.frame_buffer.clear()
@@ -51,15 +55,22 @@ def main():
         # If there is no save (the game was just opened or a run has just ended), start a new save
         else:
             del game_state
-            game_state = GameState(screen, clock)   # WARN: GC does not collect the old game_state object for some reason. There should be no references to it, but it still stays in memory
+            game_state = GameState(screen, clock)
             game_state.enter_main_menu()
 
+        start = time.time()
         # Update and draw the game loop
-        update_gameloop(screen, game_state)
+        update(screen, game_state)
+        end = time.time()
+        gameloop_update_time = end - start
 
         # Draw the frame buffer
+        start = time.time()
         game_state.frame_buffer.draw()
+        end = time.time()
+        framebuffer_time = end - start
 
+        start = time.time()
         if Inputs.is_key_pressed(pygame.K_F1):
             debugging.set_enable_debugging(not debugging.enable_debugging)
             debugging.update_debug_window(True)
@@ -89,6 +100,8 @@ def main():
             debugging.update_debug_window(True)
 
         debugging.update_debug_window()
+        end = time.time()
+        debug_update_time = end - start
 
         if Inputs.is_key_pressed(pygame.K_h):
             is_help_shown = not is_help_shown
@@ -127,43 +140,46 @@ def main():
                 "-> Game is automatically saved when you enter a new room.",
                 "-> When a run is over, the save is deleted.",
             ]
-            help_background = pygame.Surface((500, 600))
+            help_background = pygame.Surface((500, 700))
             help_background.fill((0, 0, 0))
             help_background.set_alpha(230)
             help_background_rect = help_background.get_rect()
-            help_background_rect.midtop = (screen.get_width() / 2, 50)
+            help_background_rect.midtop = (screen.get_width() / 2, 10)
             screen.blit(help_background, help_background_rect)
-            help_text = help_font.render("Help:", True, (180, 180, 180))
+            help_text = FONT_HELP.render("Help ('H' to close):", True, (180, 180, 180))
             help_text_rect = help_text.get_rect()
-            help_text_rect.midtop = (help_background_rect.midtop[0], 50)
+            help_text_rect.midtop = (help_background_rect.midtop[0], 20)
             previous_rect = help_text_rect
             screen.blit(help_text, help_text_rect)
             for help_text_line in help_text_lines:
                 if help_text_line.startswith("#"):
-                    help_text = help_font.render(help_text_line[1:], True, (255, 255, 255))
+                    help_text = FONT_HELP.render(help_text_line[1:], True, (255, 255, 255))
                     help_text_rect = help_text.get_rect()
                     help_text_rect.topleft = (help_background_rect.topleft[0] + 20, previous_rect.bottom + 10)
                     previous_rect = help_text_rect
                     screen.blit(help_text, help_text_rect)
                 else:
-                    help_text = help_font.render(help_text_line, True, (180, 180, 180))
+                    help_text = FONT_HELP.render(help_text_line, True, (180, 180, 180))
                     help_text_rect = help_text.get_rect()
                     help_text_rect.topleft = (help_background_rect.topleft[0] + 20, previous_rect.bottom)
                     previous_rect = help_text_rect
                     screen.blit(help_text, help_text_rect)
         else:
-            help_text = help_font.render("Press 'H' for help", True, (180, 180, 180))
+            help_text = FONT_HELP.render("Press 'H' for help", True, (180, 180, 180))
             help_text_rect = help_text.get_rect()
             help_text_rect.midtop = (screen.get_width() / 2, 10)
             screen.blit(help_text, help_text_rect)
 
+        fps = round(clock.get_fps())
+        delta_time = clock.get_time() / 1000
+        debugging.set_stats(fps, delta_time, framebuffer_time, gameloop_update_time, debug_update_time)
         debugging.draw_debug_window()
 
         pygame.display.flip()
 
-        # Limit FPS to 60
-        clock.tick(60)
-        game_state.delta_time = clock.get_time() / 1000
+        # Limit FPS to 144
+        clock.tick(144)
+        game_state.delta_time = delta_time
         # Cap the delta time to 30fps (to prevent the game from running too fast if the FPS drops)
         game_state.delta_time = min(game_state.delta_time, MAX_DELTA_TIME)
 

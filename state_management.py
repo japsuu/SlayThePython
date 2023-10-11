@@ -1,8 +1,7 @@
 from __future__ import annotations
-
-import random
 from typing import TYPE_CHECKING
 
+import random
 import pygame
 
 from data import rooms
@@ -12,6 +11,8 @@ from data.saves import GameSave, display_blocking_save_selection_screen
 from game_objects import EnemyCharacter, GameCard, GameObjectCollection, EnemyCharacterFactory, GameCardFactory, DamageNumberVisualEffectFactory
 from utils import drawing
 from utils.animations import Tween
+from utils.constants import DRAW_ORDER_OVERLAY_UI, FONT_DAMAGE_EFFECT_GENERIC, FONT_TOOLTIP_GENERIC
+from utils.input import Inputs
 from utils.io import ImageLibrary, load_image
 from utils.logging import log_info
 from utils.math import initialize_dungeon_random
@@ -53,9 +54,9 @@ class GameState:
         self.discard_pile_position = self.screen.get_rect().bottomright
         self.player_damaged_animation: Optional[Tween] = None
         self.player_damaged_overlay = self.game_data.image_library.effect_damaged_self
-        self.damage_effect_font = pygame.font.Font(None, 55)
         self.text_color = (255, 255, 255)
-        self.damage_number_visual_effect_factory = DamageNumberVisualEffectFactory(self.game_object_collection, self.damage_effect_font, "0", self.text_color, 3000)
+        self.tooltip_font_color = (255, 255, 255)
+        self.damage_number_visual_effect_factory = DamageNumberVisualEffectFactory(self.game_object_collection, FONT_DAMAGE_EFFECT_GENERIC, "0", self.text_color, 3000)
         # noinspection PyTypeChecker
         self.enemy_character_factory = EnemyCharacterFactory(self.game_object_collection, None, self.game_data.image_library)
         # noinspection PyTypeChecker
@@ -84,7 +85,7 @@ class GameState:
         """
         pygame.display.set_caption("Slay the Python - Initializing...")
         available_save_games = GameSave.list_available_save_games()
-        self.current_game_save = GameSave.load_save_game(display_blocking_save_selection_screen(pygame.display.get_surface(), available_save_games))
+        self.current_game_save = GameSave.load_save_game(display_blocking_save_selection_screen(pygame.display.get_surface(), self.clock, available_save_games))
         self.is_players_turn = True
         self.current_player_mana_limit = self.current_game_save.player_base_mana
         self.current_draw_limit = 5
@@ -164,7 +165,7 @@ class GameState:
 
         self.spawn_enemies_from_room_data(self.screen.get_width(), self.screen.get_height(), selected_room_data, self.enemy_character_factory, self.current_alive_enemy_characters)
 
-        self.current_room_background = load_image(selected_room_data.room_background_sprite_path)
+        self.current_room_background = load_image(selected_room_data.room_background_sprite_path, False).convert()
 
         # Ensure that the player has a target
         if len(self.current_alive_enemy_characters) > 0:
@@ -327,6 +328,18 @@ class GameState:
             if (not game_object.is_awaiting_destruction) and game_object.is_active:
                 game_object.update(self.delta_time)
                 self.frame_buffer.add_drawable(game_object)
+                # Draw the tooltip if the game object has one. TODO: Test if tooltips could be added to Drawables instead.
+                if game_object.should_show_tooltip:
+                    mouse_pos = Inputs.get_mouse_position()
+                    tooltip_surface = FONT_TOOLTIP_GENERIC.render(game_object.tooltip_text, True, self.tooltip_font_color)
+                    tooltip_rect = tooltip_surface.get_rect()
+                    tooltip_rect.topleft = (mouse_pos[0] + 10, mouse_pos[1] + 10)
+                    # Ensure the tooltip rect doesn't go offscreen:
+                    if tooltip_rect.right > self.screen.get_width():
+                        tooltip_rect.right = self.screen.get_width()
+                    if tooltip_rect.bottom > self.screen.get_height():
+                        tooltip_rect.bottom = self.screen.get_height()
+                    drawing.DrawCall(tooltip_surface, tooltip_rect, DRAW_ORDER_OVERLAY_UI).queue(self)
 
 
 class GameData:
@@ -352,5 +365,5 @@ class GameData:
         self.available_boss_rooms: List[RoomData] = RoomData.load_available_boss_rooms()
         log_info(f"Successfully loaded {len(self.available_boss_rooms)} boss rooms.")
 
-        # UI
+        # Images
         self.image_library = ImageLibrary()

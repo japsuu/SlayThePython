@@ -1,18 +1,12 @@
-#
-# Project: Slay the Python
-# Author: Jasper Honkasalo
-# Description: Contains classes for drawing to the debug_screen.
-#
-
 import pygame
 
 
 class Drawable:
     """
-    An object that can be drawn to the debug_screen.
+    An object that can be drawn to the screen.
     Not automatically added to the frame buffer.
     """
-    def __init__(self, drawn_surface: pygame.Surface, draw_position, draw_order: int, alpha=255):
+    def __init__(self, drawn_surface: pygame.Surface, draw_position, draw_order: int):
         self.drawn_surface: pygame.Surface = drawn_surface
         """The surface that will be drawn to the debug_screen."""
         self.draw_position: tuple = draw_position
@@ -36,7 +30,7 @@ class FrameBuffer:
     def add_drawable(self, drawable: Drawable):
         self.drawables.append(drawable)
 
-    def draw(self):
+    def draw(self):     # TODO: Generate a tooltip from drawables.
         # Sort the drawables based on their draw order attribute
         sorted_drawables = sorted(self.drawables, key=lambda d: d.draw_order)
 
@@ -47,7 +41,7 @@ class FrameBuffer:
         self.drawables.clear()
 
 
-class DrawCall(Drawable):
+class DrawCall(Drawable):   # WARN: Get rid of this class. Individual draw calls are bad.
     """
     A draw call for a single frame.
     Useful for drawing sprites that are not GameObjects.

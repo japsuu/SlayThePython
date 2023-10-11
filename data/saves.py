@@ -6,7 +6,7 @@ import os
 
 import pygame
 
-from constants import SAVE_GAME_FOLDER
+from utils.constants import SAVE_GAME_FOLDER, FONT_SAVE_SELECTION, FONT_SAVE_SELECTION_S
 from data.cards import CardData
 from utils.input import Inputs
 
@@ -64,7 +64,7 @@ class GameSave:
             # Create the default cards
             # Copy PLAYER_STARTING_CARDS to a new list
             player_cards = []
-            from constants import PLAYER_STARTING_CARDS, PLAYER_STARTING_HEALTH
+            from utils.constants import PLAYER_STARTING_CARDS, PLAYER_STARTING_HEALTH
             for card in PLAYER_STARTING_CARDS:
                 # Create a new CardData object with the same values as the original
                 player_cards.append(card.copy())
@@ -83,7 +83,7 @@ class GameSave:
     @staticmethod
     def list_available_save_games():
         save_games = []
-        from constants import SAVE_GAME_FOLDER
+        from utils.constants import SAVE_GAME_FOLDER
         if os.path.exists(SAVE_GAME_FOLDER):
             for filename in os.listdir(SAVE_GAME_FOLDER):
                 if filename.endswith(".json"):
@@ -92,11 +92,16 @@ class GameSave:
         return save_games
 
 
-def display_blocking_save_selection_screen(screen, available_save_games):
+def display_blocking_save_selection_screen(screen, clock, available_save_games):
     save_game_name = ""
     input_active = True
+    delta_time = 1 / 60
+    input_ticker: float = 1
+    input_ticker_flip: bool = False
+    input_ticker_text = FONT_SAVE_SELECTION.render("|", True, (255, 255, 255))
+    input_ticker_text_rect = input_ticker_text.get_rect()
 
-    while input_active:
+    while input_active:     # Quick and dirty
         Inputs.handle_input_events()
         if Inputs.should_quit():
             pygame.quit()
@@ -109,47 +114,85 @@ def display_blocking_save_selection_screen(screen, available_save_games):
         elif len(save_game_name) < 20:
             save_game_name += Inputs.get_unicode()
 
+        # Animate the input ticker
+        if input_ticker_flip:
+            input_ticker += delta_time
+        else:
+            input_ticker -= delta_time
+        if input_ticker <= 0:
+            input_ticker = 0
+            input_ticker_flip = True
+            input_ticker_text.set_alpha(0)
+        elif input_ticker >= 1:
+            input_ticker = 1
+            input_ticker_flip = False
+            input_ticker_text.set_alpha(255)
+
         screen.fill((0, 0, 0))
-        font = pygame.font.Font(None, 36)
 
-        note_text = font.render("Note: Your save name is used as the world generation seed.", True, (180, 180, 180))
-        screen.blit(note_text, (10, 40))
+        # Draw the title
+        note_text = FONT_SAVE_SELECTION.render("Start typing to name your new save.", True, (180, 180, 180))
+        screen.blit(note_text, (10, 15))
+        note_text = FONT_SAVE_SELECTION_S.render("Note: Your save name is used as the world generation seed.", True, (180, 180, 180))
+        screen.blit(note_text, (10, 50))
 
-        input_text = font.render("New save name: " + save_game_name, True, (255, 255, 255))
-        screen.blit(input_text, (10, 110))
-        button = pygame.Rect(10, 110, 800, 30)
-        pygame.draw.rect(screen, (100, 100, 100), button, 1)
+        # Draw a rect around the input
+        input_rect = pygame.Rect(10, 110, 800, 50)
+        pygame.draw.rect(screen, (100, 100, 100), input_rect, 1)
 
-        note_text_1 = font.render("Available saved games (click to load):", True, (180, 180, 180))
-        screen.blit(note_text_1, (10, 180))
+        # Draw the input text
+        input_text = FONT_SAVE_SELECTION.render("New save name: " + save_game_name, True, (255, 255, 255))
+        input_text_rect = input_text.get_rect()
+        input_text_rect.midleft = (input_rect.left + 10, input_rect.centery)
+        screen.blit(input_text, input_text_rect)
+
+        # Draw the input ticker
+        input_ticker_text_rect.topleft = input_text_rect.topright
+        screen.blit(input_ticker_text, input_ticker_text_rect)
+
+        # Draw available saved games title
+        saved_games_title_text = FONT_SAVE_SELECTION.render("Available saved games (click to load):", True, (180, 180, 180))
+        saved_games_title_text_rect = saved_games_title_text.get_rect()
+        saved_games_title_text_rect.topleft = (10, 220)
+        screen.blit(saved_games_title_text, saved_games_title_text_rect)
 
         # List all existing save games
-        for index, existing_game_save in enumerate(available_save_games):
+        previous_rect_bottom = saved_games_title_text_rect.bottom + 20
+        for existing_game_save in available_save_games:
             save = GameSave.load_save_game(existing_game_save)
 
+            buttom = pygame.Surface((680, 40))
+            button_rect = buttom.get_rect()
+            button_rect.topleft = (10, previous_rect_bottom)
+            color = (255, 255, 255)
+            if button_rect.collidepoint(Inputs.get_mouse_position()):
+                if Inputs.is_mouse_button_pressed(1):
+                    save_game_name = existing_game_save
+                    input_active = False
+                color = (80, 80, 80)
+            buttom.fill(color)
+            screen.blit(buttom, button_rect)
+
             # Split the text into two parts
-            name_text = font.render(existing_game_save, True, (210, 210, 210))
-            info_text = font.render(f"(room {save.dungeon_room_index + 1}, {save.player_health} health, {len(save.player_cards)} cards)", True, (210, 210, 210))
+            name_text = FONT_SAVE_SELECTION.render(existing_game_save, True, (0, 0, 0))
+            info_text = FONT_SAVE_SELECTION.render(f"(room {save.dungeon_room_index + 1}, {save.player_health} health, {len(save.player_cards)} cards)", True, (0, 0, 0))
 
             # Get rectangles for both texts
             name_rect = name_text.get_rect()
             info_rect = info_text.get_rect()
 
             # Set the positions
-            name_rect.topleft = (10, 210 + (index * 30))
-            info_rect.topleft = (280, name_rect.top)
+            name_rect.midleft = (20, button_rect.centery)
+            info_rect.midleft = (320, name_rect.centery)
 
             # Blit both texts
             screen.blit(name_text, name_rect)
             screen.blit(info_text, info_rect)
 
-            button = pygame.Rect(name_rect.left, name_rect.top, 620, 30)
-            pygame.draw.rect(screen, (100, 100, 100), button, 1)
-            if Inputs.is_mouse_button_pressed(1):
-                if button.collidepoint(Inputs.get_mouse_position()):
-                    save_game_name = existing_game_save
-                    input_active = False
+            previous_rect_bottom = button_rect.bottom + 10
 
         pygame.display.flip()
+        clock.tick(60)
+        delta_time = clock.get_time() / 1000
 
     return save_game_name

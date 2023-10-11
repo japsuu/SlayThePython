@@ -1,8 +1,10 @@
 import pygame
 
 
-# No idea how to make singletons in Python, so this will have to do
 class Inputs:
+    """
+    Used to keep track of all the global inputs in the game.
+    """
     def __init__(self):
         self.quit = False
         self.mouse_pos = (0, 0)
@@ -78,4 +80,5 @@ class Inputs:
                 global_inputs.mouse_pos = event.pos
 
 
+# No idea how to make proper singletons in Python, so this will have to do
 global_inputs = Inputs()
