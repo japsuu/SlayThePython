@@ -1,7 +1,7 @@
 [
   {
     "card_info_name": "Hide",
-    "card_info_description": "+20 block,\n+10 health",
+    "card_info_description": "+20 block,\n\n+10 health",
     "card_target_damage": 0,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -20,7 +20,7 @@
   },
   {
     "card_info_name": "Pierce",
-    "card_info_description": "Remove all\n   target's block,\nDeal 10 damage",
+    "card_info_description": "Remove all\ntarget's block,\n\nDeal 10 damage",
     "card_target_damage": 10,
     "card_target_remove_block": 9999,
     "card_self_damage": 0,
@@ -39,7 +39,7 @@
   },
   {
     "card_info_name": "Panic",
-    "card_info_description": "-10 health,\n+50 block,\nDraw limit -1",
+    "card_info_description": "-10 health,\n\n+50 block,\n\nDraw limit -1",
     "card_target_damage": 0,
     "card_target_remove_block": 0,
     "card_self_damage": 10,
@@ -58,7 +58,7 @@
   },
   {
     "card_info_name": "Whisper",
-    "card_info_description": "Deal 12 damage,\n+12 block",
+    "card_info_description": "Deal 12 damage,\n\n+12 block",
     "card_target_damage": 12,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -77,7 +77,7 @@
   },
   {
     "card_info_name": "Hemokinesis",
-    "card_info_description": "Deal 25 damage,\n-10 health",
+    "card_info_description": "Deal 25 damage,\n\n-10 health",
     "card_target_damage": 25,
     "card_target_remove_block": 0,
     "card_self_damage": 10,
@@ -96,7 +96,7 @@
   },
   {
     "card_info_name": "Loop",
-    "card_info_description": "+99 block,\n+10 health,\n+1 mana at the start\nof preceding turns\nExhaust",
+    "card_info_description": "+99 block,\n\n+10 health,\n\n+1 mana at the start\nof preceding turns\n\nExhaust",
     "card_target_damage": 25,
     "card_target_remove_block": 0,
     "card_self_damage": 10,
@@ -115,7 +115,7 @@
   },
   {
     "card_info_name": "Love",
-    "card_info_description": "+20 block\nExhaust",
+    "card_info_description": "+20 block\n\nExhaust",
     "card_target_damage": 0,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -134,7 +134,7 @@
   },
   {
     "card_info_name": "Leech",
-    "card_info_description": "Deal 10 damage,\n+10 block,\n+10 health",
+    "card_info_description": "Deal 10 damage,\n\n+10 block,\n\n+10 health",
     "card_target_damage": 10,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -153,7 +153,7 @@
   },
   {
     "card_info_name": "Blood pact",
-    "card_info_description": "Deal 10 damage,\n+5 block,\n-5 health",
+    "card_info_description": "Deal 10 damage,\n\n+5 block,\n\n-5 health",
     "card_target_damage": 10,
     "card_target_remove_block": 0,
     "card_self_damage": 5,
@@ -172,7 +172,7 @@
   },
   {
     "card_info_name": "Rage",
-    "card_info_description": "Deal 4 damage\n+1 mana",
+    "card_info_description": "Deal 4 damage\n\n+1 mana",
     "card_target_damage": 4,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -191,7 +191,7 @@
   },
   {
     "card_info_name": "Electroshock",
-    "card_info_description": "Deal 40 damage\n+2 mana next turn",
+    "card_info_description": "Deal 40 damage\n\n+2 mana next turn",
     "card_target_damage": 40,
     "card_target_remove_block": 0,
     "card_self_damage": 0,
@@ -210,7 +210,7 @@
   },
   {
     "card_info_name": "Despair",
-    "card_info_description": "Remove 15\ntarget's block,\nDeal 8 damage,",
+    "card_info_description": "Remove 15\ntarget's block,\n\nDeal 8 damage,",
     "card_target_damage": 8,
     "card_target_remove_block": 15,
     "card_self_damage": 0,
@@ -229,7 +229,7 @@
   },
   {
     "card_info_name": "Dissolve",
-    "card_info_description": "Remove 12\ntarget's block\nExhaust",
+    "card_info_description": "Remove 12\ntarget's block\n\nExhaust",
     "card_target_damage": 0,
     "card_target_remove_block": 12,
     "card_self_damage": 5,

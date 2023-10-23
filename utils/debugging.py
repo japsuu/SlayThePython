@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from utils.constants import FONT_DEBUG
+from utils.input import Inputs
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -50,6 +51,7 @@ def set_stats(current_fps, current_delta_time, current_framebuffer_time, current
     debug_stats_strings.append(f"Framebuffer ms: {current_framebuffer_time:.4f}")
     debug_stats_strings.append(f"Gameloop ms: {current_gameloop_update_time:.4f}")
     debug_stats_strings.append(f"Debug ms: {current_debug_update_time:.4f}")
+    debug_stats_strings.append(f"Mouse pos: {Inputs.get_mouse_position()}")
 
 
 def set_debug_target_object(game_object):
@@ -154,8 +156,8 @@ def draw_debug_window():
         y_offset += FONT_DEBUG.get_height() + 5
         max_width = max(max_width, text_surface.get_width())
 
-    debug_surface_height = 80
-    debug_surface_width = 200
+    debug_surface_height = 95
+    debug_surface_width = 140
     if debug_stats_surface is None:
         debug_stats_surface = pygame.Surface((debug_surface_width, debug_surface_height))
         debug_stats_surface.set_alpha(128)

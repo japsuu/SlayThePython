@@ -161,17 +161,17 @@ def display_blocking_save_selection_screen(screen, clock, available_save_games):
         for existing_game_save in available_save_games:
             save = GameSave.load_save_game(existing_game_save)
 
-            buttom = pygame.Surface((680, 40))
-            button_rect = buttom.get_rect()
+            button = pygame.Surface((680, 40))
+            button_rect = button.get_rect()
             button_rect.topleft = (10, previous_rect_bottom)
             color = (255, 255, 255)
             if button_rect.collidepoint(Inputs.get_mouse_position()):
-                if Inputs.is_mouse_button_pressed(1):
+                if Inputs.is_mouse_button_up(1):
                     save_game_name = existing_game_save
                     input_active = False
                 color = (80, 80, 80)
-            buttom.fill(color)
-            screen.blit(buttom, button_rect)
+            button.fill(color)
+            screen.blit(button, button_rect)
 
             # Split the text into two parts
             name_text = FONT_SAVE_SELECTION.render(existing_game_save, True, (0, 0, 0))

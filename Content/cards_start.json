@@ -172,7 +172,7 @@
   },
   {
     "card_info_name": "Crush",
-    "card_info_description": "Remove 7 block from target,\nDeal 10 damage",
+    "card_info_description": "Remove 7 block from target,\n\nDeal 10 damage",
     "card_target_damage": 10,
     "card_target_remove_block": 7,
     "card_self_damage": 0,

@@ -1,0 +1,72 @@
+{
+  "room_name": "Cursed room",
+  "room_description": "You feel a strange aura in this room. You can feel the presence of a curse. There's a pedestal in the middle of the room.",
+  "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_0.png",
+  "room_available_actions":
+  [
+    {
+      "action_name": "Touch",
+      "action_description": "Touch the pedestal - Become cursed",
+      "change_health_amount": -25,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 14,
+      "change_mana_permanent": 0
+    },
+    {
+      "action_name": "Pray",
+      "action_description": "Pray - Receive a blessing",
+      "change_health_amount": 0,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 1
+    },
+    {
+      "action_name": "Sacrifice",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    },
+    {
+      "action_name": "SSSSSSSSSS",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    },
+    {
+      "action_name": "SSSSSSSSSSSS",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    },
+    {
+      "action_name": "SSSSSSSSSSSSSS",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    },
+    {
+      "action_name": "SSSSSSSSSSSSSSSS",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    },
+    {
+      "action_name": "SSSSSSSSSSSSSSSSSS",
+      "action_description": "Sacrifice - Gods favor you",
+      "change_health_amount": -90,
+      "reward_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 8
+    }
+  ]
+}

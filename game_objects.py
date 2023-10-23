@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 from typing import TYPE_CHECKING, Dict
 
-from utils.drawing import Drawable
-from utils.input import Inputs
+from utils.drawing import Drawable, TextTooltip
 from utils.logging import log_warning
 
 if TYPE_CHECKING:
@@ -14,7 +12,7 @@ import pygame
 import numpy as np
 
 from utils.constants import LAYER_ENEMY, LAYER_PLAYER_HAND, LAYER_EFFECTS, LAYER_DEFAULT, ANIM_PRIORITY_CARD_DRAW, ANIM_PRIORITY_CARD_DISCARD, ANIM_PRIORITY_DEFAULT, FONT_ENEMY_HEALTH, \
-    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST
+    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST, ANIM_PRIORITY_CARD_OVERRIDE
 from data.cards import CardData
 from data.enemies import EnemySpawnData, EnemyIntentionData
 from utils.animations import Animation, TupleTween, Tween
@@ -52,12 +50,9 @@ class GameObject(Drawable):
     """
 
     def __init__(self, game_object_collection: GameObjectCollection, drawn_surface: pygame.Surface, position, draw_order=LAYER_DEFAULT):
-        super().__init__(drawn_surface, position, draw_order)
+        super().__init__(drawn_surface, position, draw_order, None)
         self.game_object_collection: Optional[GameObjectCollection] = game_object_collection
         """The collection that this object belongs to."""
-        self.rect: pygame.Rect = drawn_surface.get_rect()
-        """The rect of the object."""
-        self.rect.center = position
         self.draw_order: int = draw_order
         """The order in which the object will be drawn. Lower numbers are drawn first."""
         self.animations: Dict[int, Animation] = {}
@@ -77,9 +72,6 @@ class GameObject(Drawable):
         """The time in milliseconds when the object was destroyed."""
         self.is_debugged = False
         """If this object is currently shown in the debug inspector."""
-        self.tooltip_text: Optional[str] = None
-        """The text that is shown in the tooltip when the mouse is hovering over the object."""
-        self.should_show_tooltip: bool = False
 
     def on_initialized(self):
         """
@@ -109,8 +101,6 @@ class GameObject(Drawable):
         if not self.is_queued_for_update:
             raise Exception("GameObject is not queued for updates. Did you forget to call GameObject.queue() after creating it, or did you not call super in your subclass?")
 
-        self.draw_position = self.rect.topleft
-
         # Update animations
         if self.animations:
             sorted_keys = sorted(self.animations.keys())
@@ -119,13 +109,6 @@ class GameObject(Drawable):
                 animation.update(delta_time)
                 if animation.is_finished:
                     del self.animations[key]
-
-        # Update tooltip
-        mouse_pos = Inputs.get_mouse_position()
-        self.should_show_tooltip = False
-        if self.rect.collidepoint(mouse_pos):
-            if self.tooltip_text:
-                self.should_show_tooltip = True
 
     def draw(self, screen: pygame.Surface):
         if not self.is_active:
@@ -141,11 +124,17 @@ class GameObject(Drawable):
 
         super().draw(screen)
 
-    def set_tooltip_text(self, text):
-        self.tooltip_text = text
+    def set_tooltip_text(self, tooltip_text_lines: Optional[List[str]]):
+        self.tooltip = TextTooltip(tooltip_text_lines)
 
     def set_active(self, should_be_active):
         self.is_active = should_be_active
+
+    def set_position(self, new_position):
+        self.rect.topleft = new_position
+
+    def get_position(self):
+        return self.rect.topleft
 
     def destroy(self):
         # print(f"Destroying {self}")
@@ -205,7 +194,8 @@ class EnemyCharacterFactory(GameObjectFactory):
 
 
 class EnemyCharacter(GameObject):
-    def __init__(self, game_object_collection: GameObjectCollection, position, enemy_spawn_data: EnemySpawnData, image_library: ImageLibrary, health_font, icon_subscript_font, damage_effect_font):
+    def __init__(self, game_object_collection: GameObjectCollection, position, enemy_spawn_data: EnemySpawnData, image_library: ImageLibrary, health_font, icon_subscript_font,
+                 damage_effect_font):
         self.enemy_spawn_data: EnemySpawnData = enemy_spawn_data
         self.image_library: ImageLibrary = image_library
         self.normal_image = load_image(self.enemy_spawn_data.sprite_path)
@@ -228,7 +218,7 @@ class EnemyCharacter(GameObject):
         self.health_bar_background_rect = pygame.Rect(self.rect.left, self.rect.top - 10, health_bar_background_width, 5)
         self.visual_effect_factory = RandomVisualEffectFactory(self.game_object_collection, self.image_library.slash_effects_list, 1000)
         self.damage_number_visual_effect_factory = DamageNumberVisualEffectFactory(self.game_object_collection, self.damage_effect_font, "0", self.text_color, 3000)
-        self.set_tooltip_text(self.enemy_spawn_data.name)
+        self.set_tooltip_text([enemy_spawn_data.name])
 
     def update(self, delta_time):
         super().update(delta_time)
@@ -245,12 +235,12 @@ class EnemyCharacter(GameObject):
     def draw(self, screen):
         super().draw(screen)
         if self.damage_animation:
-            screen.blit(self.damaged_image, self.draw_position)
+            screen.blit(self.damaged_image, self.rect)
         if self.turn_animation:
-            screen.blit(self.turn_sprite, self.draw_position)
+            screen.blit(self.turn_sprite, self.rect)
         self.draw_health_bar(screen)
         if self.current_round_index >= 0:
-            self.draw_intentions(screen, self.current_round_index)
+            self.__draw_intentions(screen, self.current_round_index)
 
     def draw_health_bar(self, screen):
         has_block = self.current_block > 0
@@ -365,7 +355,7 @@ class EnemyCharacter(GameObject):
     def __hide_intentions(self):
         self.current_round_index = -1
 
-    def draw_intentions(self, screen, current_round_index):
+    def __draw_intentions(self, screen, current_round_index):
         next_intention = self.get_intention(current_round_index)
         has_shown_intentions = False
         next_rect_pos: tuple[int, int] = self.health_bar_background_rect.topleft
@@ -392,6 +382,13 @@ class EnemyCharacter(GameObject):
         if not has_shown_intentions:  # If no intentions are shown, display the "unknown intentions" icon
             self.__draw_intention_icon(screen, self.image_library.icon_intention_unknown, next_rect_pos)
 
+        tooltip_lines = [self.enemy_spawn_data.name]
+        intentions = next_intention.get_description()
+        if intentions:
+            tooltip_lines.append("")
+            tooltip_lines.extend(intentions)
+        self.set_tooltip_text(tooltip_lines)
+
     @staticmethod
     def __draw_intention_icon(screen, icon, position):
         icon_rect = pygame.Rect(0, 0, icon.get_width(), icon.get_height())
@@ -411,24 +408,27 @@ class GameCardFactory(GameObjectFactory):
         super().__init__(game_object_collection, self.create)
 
     def create(self, position) -> GameCard:
-        return GameCard(self.game_object_collection, self.draw_pile_position, self.discard_pile_position, position, self.card_data, self.card_name_font, self.card_description_font, self.card_mana_cost_font)
+        return GameCard(self.game_object_collection, self.draw_pile_position, self.discard_pile_position, position, self.card_data,
+                        self.card_name_font, self.card_description_font, self.card_mana_cost_font)
 
     def set_target_card_data(self, card_data: CardData):
         self.card_data = card_data
 
 
 class GameCard(GameObject):
-    def __init__(self, game_object_collection: GameObjectCollection, draw_pile_position: tuple, discard_pile_position: tuple, card_position: tuple, card_data: CardData, card_name_font, card_description_font, card_mana_cost_font):
+    def __init__(self, game_object_collection: GameObjectCollection, draw_pile_position: tuple, discard_pile_position: tuple, card_position: tuple, card_data: CardData,
+                 card_name_font, card_description_font, card_mana_cost_font):
         self.card_data: CardData = card_data
         self.current_scale_factor = 1
         self.draw_pile_position = draw_pile_position
         self.discard_pile_position = discard_pile_position
-        self.original_position = card_position
+        self.home_position = card_position
         self.has_been_played = False
         self.is_self_hovered = False
         self.is_other_card_hovered = False
-        self.can_be_clicked = False
+        self.can_be_clicked = False     # NOTE: This can cause unexpected behaviour.
         self.alpha = 255
+        self.position_offset = (0, 0)
 
         self.original_card_image = load_image(self.card_data.sprite_path)
         self.original_scale = (int(self.original_card_image.get_width()), int(self.original_card_image.get_height()))
@@ -442,14 +442,7 @@ class GameCard(GameObject):
         self.card_info_mana_text_color = (0, 0, 0)
 
         super().__init__(game_object_collection, image_copy, card_position, LAYER_PLAYER_HAND)
-
-        # Play a draw animation when the card is created
-        draw_animation = Animation([
-            TupleTween(self.draw_pile_position, self.original_position, 0.5, self.__update_position),
-            Tween(0, 1, 0.3, self.__update_scale),
-            Tween(0, 255, 1, self.__update_alpha)
-        ], finished_callback=self.__enable_clicking)
-        self.play_animation(draw_animation, priority=ANIM_PRIORITY_CARD_DRAW)
+        self.blocks_tooltips = True
 
     def __enable_clicking(self):
         self.can_be_clicked = True
@@ -464,6 +457,24 @@ class GameCard(GameObject):
         image_copy = self.original_card_image.copy()
         self.drawn_surface = pygame.transform.scale(image_copy, (int(self.original_scale[0] * new_scale), int(self.original_scale[1] * new_scale)))
         self.current_scale_factor = new_scale
+
+    def play_draw_animation(self, target_position):
+        self.home_position = target_position
+        self.can_be_clicked = False
+        draw_animation = Animation([
+            TupleTween(self.rect.center, self.home_position, 0.5, self.__update_position),
+            Tween(0, 1, 0.3, self.__update_scale),
+            Tween(0, 255, 1, self.__update_alpha)
+        ], finished_callback=self.__enable_clicking)
+        self.play_animation(draw_animation, priority=ANIM_PRIORITY_CARD_DRAW)
+
+    def play_move_animation(self, target_position):
+        self.home_position = target_position
+        # self.can_be_clicked = False
+        draw_animation = Animation([
+            TupleTween(self.rect.center, self.home_position, 0.6, self.__update_position)
+        ])  # , finished_callback=self.__enable_clicking
+        self.play_animation(draw_animation, priority=ANIM_PRIORITY_CARD_OVERRIDE)
 
     def on_played(self, exhausted: bool = False, deleted: bool = False):
         if self.has_been_played:
@@ -486,7 +497,7 @@ class GameCard(GameObject):
         self.play_animation(animation, priority=ANIM_PRIORITY_CARD_DISCARD)
         self.has_been_played = True
 
-    def create_animation(self, new_position, position_duration, new_alpha, alpha_duration, priority=ANIM_PRIORITY_DEFAULT):
+    def play_move_offset_animation(self, new_position, position_duration, new_alpha, alpha_duration, priority=ANIM_PRIORITY_DEFAULT):
         if self.has_been_played:
             return
         animation = Animation([
@@ -515,7 +526,7 @@ class GameCard(GameObject):
             description_rect.midtop = previous_description_midbottom
             size = (description_surface.get_width() * self.current_scale_factor, description_surface.get_height() * self.current_scale_factor)
             description_surface.set_alpha(self.alpha)
-            previous_description_midbottom = description_rect.midbottom
+            previous_description_midbottom = (description_rect.midbottom[0], description_rect.midbottom[1] - 10)
             screen.blit(pygame.transform.scale(description_surface, size), description_rect)
 
         # Draw card cost
@@ -550,7 +561,7 @@ class RandomVisualEffectFactory(GameObjectFactory):
 
 class VisualEffect(GameObject):
     """
-    A visual effect that is drawn on the debug_screen for a certain amount of time.
+    A visual effect that is drawn on the screen for a certain amount of time.
     Fades out over time.
     Destroyed when the lifetime is over.
     """
@@ -599,7 +610,7 @@ class DamageNumberVisualEffectFactory(GameObjectFactory):
 
 class DamageNumberVisualEffect(VisualEffect):
     """
-    A visual effect that is drawn on the debug_screen for a certain amount of time.
+    A visual effect that is drawn on the screen for a certain amount of time.
     Moves up and fades out over time.
     """
 

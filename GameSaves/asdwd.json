@@ -1,6 +1,6 @@
 {
-  "save_game_name": "sfdsf",
-  "dungeon_seed": 97292798452113209104000761216129741944283504083355168140893328434616108802887,
+  "save_game_name": "asdwd",
+  "dungeon_seed": 71138095504224165874179753153608077466643094701312371184360485622983419946195,
   "dungeon_room_index": 0,
   "player_health": 100,
   "player_base_mana": 3,
@@ -178,7 +178,7 @@
     },
     {
       "card_info_name": "Crush",
-      "card_info_description": "Remove 7 block from target,\nDeal 10 damage",
+      "card_info_description": "Remove 7 block from target,\n\nDeal 10 damage",
       "card_target_damage": 10,
       "card_target_remove_block": 7,
       "card_self_damage": 0,

@@ -4,14 +4,25 @@ import random
 from utils import logging
 
 
-# def lerp(a: float, b: float, t: float) -> float:
-#     """Linear interpolate on the scale given by a to b, using t as the point on that scale.
-#     Examples
-#     --------
-#         50 == lerp(0, 100, 0.5)
-#         4.2 == lerp(1, 5, 0.8)
-#     """
-#     return (1 - t) * a + t * b
+def lerp(a: float, b: float, t: float) -> float:
+    """
+    Linearly interpolate on the scale given by a to b, using t as the point on that scale.
+    Examples
+    --------
+        50 == lerp(0, 100, 0.5)
+        4.2 == lerp(1, 5, 0.8)
+    """
+    return (1 - t) * a + t * b
+
+
+def lerp_tuple(a: tuple[float, float], b: tuple[float, float], t: float) -> tuple[float, float]:
+    """
+    Linearly interpolate on the scale given by a to b, using t as the point on that scale.
+    """
+    return (
+        (1 - t) * a[0] + t * b[0],
+        (1 - t) * a[1] + t * b[1],
+    )
 
 
 def get_random_inside_rect(rect_size) -> tuple[float, float]:
@@ -36,3 +47,7 @@ def hash_string(string: str):
     sha256 = hashlib.sha256(string.encode()).hexdigest()
     seed_integer = int(sha256, 16)
     return seed_integer
+
+
+def ceil_div(a: int, b: int) -> int:
+    return -(-a // b)

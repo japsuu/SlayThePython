@@ -29,6 +29,18 @@ class EnemyIntentionData:
             data["turn_sprite_path"]
         )
 
+    def get_description(self) -> List[str]:
+        description = ["Next turn:"]
+        if self.gain_health_amount > 0:
+            description.append(f"Will gain ? health.")
+        if self.gain_block_amount > 0:
+            description.append(f"Will gain ? block.")
+        if self.deal_damage_amount > 0:
+            description.append(f"Will deal {self.deal_damage_amount} damage.")
+        if len(description) == 1:
+            description.append("Will do nothing.")
+        return description
+
 
 class EnemySpawnData:
     def __init__(self, name, max_health_min, max_health_max, sprite_path, damaged_sprite_path, intention_pattern):
