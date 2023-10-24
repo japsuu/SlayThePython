@@ -1,0 +1,25 @@
+{
+  "rarity": "rare",
+  "room_name": "Statue of the Fallen",
+  "room_description": "A statue of a fallen hero. It seems to be emanating a strange aura. There's an inscription on the statue's base: \"The Fallen shall rise again.\"",
+  "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_statue.png",
+  "room_available_actions":
+  [
+    {
+      "action_name": "Touch",
+      "action_description": "You touch the statue. You are filled with strange energy.",
+      "change_health_amount": 75,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": -1
+    },
+    {
+      "action_name": "Try to leave",
+      "action_description": "The statue starts to glow. You feel a strange force pulling you back.",
+      "change_health_amount": -75,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 2
+    }
+  ]
+}
