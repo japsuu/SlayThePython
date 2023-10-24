@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 
 from utils.drawing import Drawable, TextTooltip
-from utils.logging import log_warning
+from utils.logging import log_warning, log_info
 
 if TYPE_CHECKING:
     from typing import List, Optional
@@ -12,10 +12,10 @@ import pygame
 import numpy as np
 
 from utils.constants import LAYER_ENEMY, LAYER_PLAYER_HAND, LAYER_EFFECTS, LAYER_DEFAULT, ANIM_PRIORITY_CARD_DRAW, ANIM_PRIORITY_CARD_DISCARD, ANIM_PRIORITY_DEFAULT, FONT_ENEMY_HEALTH, \
-    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST, ANIM_PRIORITY_CARD_OVERRIDE
+    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST, ANIM_PRIORITY_CARD_REPOSITION
 from data.cards import CardData
 from data.enemies import EnemySpawnData, EnemyIntentionData
-from utils.animations import Animation, TupleTween, Tween
+from utils.animations import Animation, Tween, GetterTween, GetterTupleTween
 from utils.io import ImageLibrary, load_image
 from utils.math import get_random_inside_rect
 
@@ -49,7 +49,7 @@ class GameObject(Drawable):
     A base class for all game objects. Game objects are objects that are updated and drawn every frame.
     """
 
-    def __init__(self, game_object_collection: GameObjectCollection, drawn_surface: pygame.Surface, position, draw_order=LAYER_DEFAULT):
+    def __init__(self, game_object_collection: GameObjectCollection, drawn_surface: pygame.Surface, position, draw_order=LAYER_DEFAULT, name="unnamed game object"):
         super().__init__(drawn_surface, position, draw_order, None)
         self.game_object_collection: Optional[GameObjectCollection] = game_object_collection
         """The collection that this object belongs to."""
@@ -58,9 +58,9 @@ class GameObject(Drawable):
         self.animations: Dict[int, Animation] = {}
         """
         A dict of animations that are currently playing.
-        Use play_animation() to add an animation to the dict.
+        Use queue_animation() to add an animation to the dict.
         The key is used to determine the order in which animations are updated.
-        Lower priority animations are updated first, thus overridden by higher priority animations.
+        Higher priority animations override lower priority animations.
         """
         self.is_awaiting_destruction: bool = False
         """If True, the object will be destroyed either at the end of the frame, or the next frame."""
@@ -72,6 +72,8 @@ class GameObject(Drawable):
         """The time in milliseconds when the object was destroyed."""
         self.is_debugged = False
         """If this object is currently shown in the debug inspector."""
+        self.name = name
+        """The name of the object. Used for debugging."""
 
     def on_initialized(self):
         """
@@ -80,11 +82,19 @@ class GameObject(Drawable):
         """
         pass
 
-    def play_animation(self, animation: Animation, priority: int):
+    def cancel_all_animations(self):
+        """
+        Cancels all animations.
+        :return: None
+        """
+        self.animations.clear()
+
+    def queue_animation(self, animation: Animation, priority: int):
         """
         Adds an animation to the object's animation dict.
         :param animation: The animation to add.
-        :param priority: The priority of the animation. Lower numbers are updated first.
+        :param priority: The priority of the animation.
+        Higher priority animations override lower priority animations.
         :return: None
         """
         self.animations[priority] = animation
@@ -99,16 +109,17 @@ class GameObject(Drawable):
                 return
         # Ensure that the object is queued for updates
         if not self.is_queued_for_update:
-            raise Exception("GameObject is not queued for updates. Did you forget to call GameObject.queue() after creating it, or did you not call super in your subclass?")
+            raise Exception(f"GameObject {self.name} is not queued for updates. Did you forget to call GameObject.queue() after creating it, or did you not call super in your subclass?")
 
-        # Update animations
+        # Update the highest priority animation
         if self.animations:
             sorted_keys = sorted(self.animations.keys())
-            for key in sorted_keys:
-                animation = self.animations[key]
-                animation.update(delta_time)
-                if animation.is_finished:
-                    del self.animations[key]
+            animation = self.animations[sorted_keys[-1]]
+            animation.update(delta_time)
+            if self.is_debugged:
+                log_info(f"{self.name} update anim {animation.name} (priority {sorted_keys[-1]})")
+            if animation.is_finished:
+                del self.animations[sorted_keys[-1]]
 
     def draw(self, screen: pygame.Surface):
         if not self.is_active:
@@ -306,7 +317,7 @@ class EnemyCharacter(GameObject):
         self.damage_animation = Animation([
             Tween(0, 255, 0.5, self.__update_normal_sprite_alpha),
             Tween(255, 0, 0.5, self.__update_damage_sprite_alpha),
-        ])
+        ], name="Damage animation")
 
         # Draw a damage effect
         effect_pos = self.rect.center
@@ -341,7 +352,7 @@ class EnemyCharacter(GameObject):
         self.turn_animation = Animation([
             Tween(255, 0, 1, self.__update_turn_sprite_alpha),
             Tween(0, 255, 1.5, self.__update_normal_sprite_alpha, self.__hide_intentions)
-        ])
+        ], name="Turn animation")
 
     def __update_turn_sprite_alpha(self, new_alpha):
         self.turn_sprite.set_alpha(new_alpha)
@@ -428,7 +439,6 @@ class GameCard(GameObject):
         self.is_other_card_hovered = False
         self.can_be_clicked = False     # NOTE: This can cause unexpected behaviour.
         self.alpha = 255
-        self.position_offset = (0, 0)
 
         self.original_card_image = load_image(self.card_data.sprite_path)
         self.original_scale = (int(self.original_card_image.get_width()), int(self.original_card_image.get_height()))
@@ -441,8 +451,24 @@ class GameCard(GameObject):
         self.card_description_text_color = (255, 255, 255)
         self.card_info_mana_text_color = (0, 0, 0)
 
-        super().__init__(game_object_collection, image_copy, card_position, LAYER_PLAYER_HAND)
+        super().__init__(game_object_collection, image_copy, card_position, LAYER_PLAYER_HAND, name=f"Card {self.card_data.card_info_name}")
         self.blocks_tooltips = True
+        generated_tooltip_lines = self.__generate_tooltip_lines()
+        if len(generated_tooltip_lines) > 0:
+            self.set_tooltip_text(generated_tooltip_lines)
+
+    def __generate_tooltip_lines(self):
+        tooltip_lines = []
+        if self.card_data.exhaust:
+            tooltip_lines.append("Exhaust:")
+            tooltip_lines.append("When played, this card is removed")
+            tooltip_lines.append("from your deck for the rest of the combat.")
+            tooltip_lines.append("")
+        if self.card_data.delete:
+            tooltip_lines.append("Delete:")
+            tooltip_lines.append("When played, this card is permanently")
+            tooltip_lines.append("removed from your deck.")
+        return tooltip_lines
 
     def __enable_clicking(self):
         self.can_be_clicked = True
@@ -462,49 +488,60 @@ class GameCard(GameObject):
         self.home_position = target_position
         self.can_be_clicked = False
         draw_animation = Animation([
-            TupleTween(self.rect.center, self.home_position, 0.5, self.__update_position),
-            Tween(0, 1, 0.3, self.__update_scale),
-            Tween(0, 255, 1, self.__update_alpha)
-        ], finished_callback=self.__enable_clicking)
-        self.play_animation(draw_animation, priority=ANIM_PRIORITY_CARD_DRAW)
+            GetterTupleTween(self.__get_position, self.home_position, 0.5, self.__update_position),
+            GetterTween(self.__get_scale_factor, 1, 0.3, self.__update_scale),
+            GetterTween(self.__get_alpha, 255, 1, self.__update_alpha)
+        ], finished_callback=self.__enable_clicking, name="Card draw animation")
+        self.cancel_all_animations()
+        self.queue_animation(draw_animation, priority=ANIM_PRIORITY_CARD_DRAW)
 
-    def play_move_animation(self, target_position):
+    def play_reposition_animation(self, target_position):
         self.home_position = target_position
         # self.can_be_clicked = False
         draw_animation = Animation([
-            TupleTween(self.rect.center, self.home_position, 0.6, self.__update_position)
-        ])  # , finished_callback=self.__enable_clicking
-        self.play_animation(draw_animation, priority=ANIM_PRIORITY_CARD_OVERRIDE)
+            GetterTupleTween(self.__get_position, self.home_position, 0.2, self.__update_position)
+        ], name="Card reposition animation")  # , finished_callback=self.__enable_clicking
+        self.queue_animation(draw_animation, priority=ANIM_PRIORITY_CARD_REPOSITION)
 
     def on_played(self, exhausted: bool = False, deleted: bool = False):
         if self.has_been_played:
             return
         if deleted:
             animation = Animation([
-                TupleTween(self.rect.center, (self.rect.centerx, pygame.display.get_surface().get_rect().bottom + 200), 0.4, self.__update_position)
-            ], finished_callback=self.destroy)
+                GetterTupleTween(self.__get_position, (self.rect.centerx, pygame.display.get_surface().get_rect().bottom + 200), 0.4, self.__update_position)
+            ], finished_callback=self.destroy, name="Card deletion animation")
         elif exhausted:
             animation = Animation([
-                TupleTween(self.rect.center, (self.rect.centerx, self.rect.top - 100), 1, self.__update_position),
-                Tween(self.alpha, 0, 0.8, self.__update_alpha)
-            ], finished_callback=self.destroy)
+                GetterTupleTween(self.__get_position, (self.rect.centerx, self.rect.top - 100), 1, self.__update_position),
+                GetterTween(self.__get_alpha, 0, 0.8, self.__update_alpha)
+            ], finished_callback=self.destroy, name="Card exhaustion animation")
         else:
             animation = Animation([
-                TupleTween(self.rect.center, self.discard_pile_position, 0.5, self.__update_position),
-                Tween(self.current_scale_factor, 0.5, 0.8, self.__update_scale),
-                Tween(self.alpha, 0, 1, self.__update_alpha)
-            ], finished_callback=self.destroy)
-        self.play_animation(animation, priority=ANIM_PRIORITY_CARD_DISCARD)
+                GetterTupleTween(self.__get_position, self.discard_pile_position, 0.5, self.__update_position),
+                GetterTween(self.__get_scale_factor, 0.5, 0.8, self.__update_scale),
+                GetterTween(self.__get_alpha, 0, 1, self.__update_alpha)
+            ], finished_callback=self.destroy, name="Card discard animation")
+        self.cancel_all_animations()
+        self.queue_animation(animation, priority=ANIM_PRIORITY_CARD_DISCARD)
         self.has_been_played = True
 
-    def play_move_offset_animation(self, new_position, position_duration, new_alpha, alpha_duration, priority=ANIM_PRIORITY_DEFAULT):
+    def create_and_queue_animation(self, new_position, position_duration, new_alpha, alpha_duration, priority=ANIM_PRIORITY_DEFAULT, name="unnamed"):
         if self.has_been_played:
             return
         animation = Animation([
-            TupleTween(self.rect.center, new_position, position_duration, self.__update_position),
-            Tween(self.alpha, new_alpha, alpha_duration, self.__update_alpha)
-        ])
-        self.play_animation(animation, priority)
+            GetterTupleTween(self.__get_position, new_position, position_duration, self.__update_position),
+            GetterTween(self.__get_alpha, new_alpha, alpha_duration, self.__update_alpha)
+        ], name=name)
+        self.queue_animation(animation, priority)
+
+    def __get_position(self):
+        return self.rect.center
+
+    def __get_alpha(self):
+        return self.alpha
+
+    def __get_scale_factor(self):
+        return self.current_scale_factor
 
     def draw(self, screen):
         self.drawn_surface.set_alpha(self.alpha)

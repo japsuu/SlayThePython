@@ -1,0 +1,25 @@
+{
+  "rarity": "uncommon",
+  "room_name": "Tree room",
+  "room_description": "You enter a chamber filled with the corpses of failed adventurers. There's an old tree in the middle of the room, with a chest at its base.",
+  "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_tree.png",
+  "room_available_actions":
+  [
+    {
+      "action_name": "Steal",
+      "action_description": "No one will miss them, right?",
+      "change_health_amount": -20,
+      "choose_from_cards_count": 1,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 1
+    },
+    {
+      "action_name": "Donate",
+      "action_description": "Maybe someone else will find them useful",
+      "change_health_amount": 10,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 3,
+      "change_mana_permanent": 0
+    }
+  ]
+}

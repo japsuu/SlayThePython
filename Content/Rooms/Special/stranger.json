@@ -1,0 +1,33 @@
+{
+  "rarity": "uncommon",
+  "room_name": "Mysterious stranger",
+  "room_description": "A mysterious stranger is standing in the hallway in front of you. He is wearing a hood and you can't see his face. He seems to be waiting for you to come to him.",
+  "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_stranger.png",
+  "room_available_actions":
+  [
+    {
+      "action_name": "Talk",
+      "action_description": "The stranger teaches you fire magic.",
+      "change_health_amount": -10,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 2,
+      "change_mana_permanent": 0
+    },
+    {
+      "action_name": "Rob",
+      "action_description": "You rob the stranger. He curses you.",
+      "change_health_amount": 0,
+      "choose_from_cards_count": 4,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": -1
+    },
+    {
+      "action_name": "Ignore",
+      "action_description": "Retrace your steps.",
+      "change_health_amount": 0,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 0
+    }
+  ]
+}

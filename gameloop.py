@@ -27,7 +27,7 @@ def update(screen: pygame.Surface, game_state: GameState):
         return
 
     if game_state.is_player_choosing_reward_cards:
-        player_add_cards(screen, game_state)
+        draw_player_reward_cards(screen, game_state)
         return
 
     if game_state.is_player_removing_cards:
@@ -36,11 +36,6 @@ def update(screen: pygame.Surface, game_state: GameState):
 
     if game_state.current_special_room_data:
         handle_special_room(game_state)
-        return
-
-    if len(game_state.current_alive_enemy_characters) == 0:
-        game_state.load_next_room()
-        game_state.save()
         return
 
     if Inputs.is_key_pressed(pygame.K_F12):
@@ -57,13 +52,7 @@ def update(screen: pygame.Surface, game_state: GameState):
 
     draw_player_stats(screen, game_state)
 
-    if game_state.gameplay_pause_timer > 0:
-        game_state.gameplay_pause_timer -= game_state.delta_time
-        return  # Don't update the game if it's paused
-
-    fight_state = game_state.get_fight_state()
-
-    if fight_state == "PLAYER_WIN":
+    if len(game_state.current_alive_enemy_characters) == 0:  # Player win state
         if game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index:
             # The player has defeated the boss, delete the save game and return to the main menu
             game_state.delete_current_save()
@@ -74,108 +63,113 @@ def update(screen: pygame.Surface, game_state: GameState):
         game_state.current_hand.clear()
         game_state.generate_reward_cards()
         game_state.is_player_choosing_reward_cards = True
-    elif fight_state == "PLAYER_LOSE":
+    elif game_state.current_game_save.player_health <= 0:  # Player lose state
         return
-    elif fight_state == "IN_PROGRESS":
-        if game_state.is_players_turn:
-            # Display enemies' next round's intentions
-            for enemy in game_state.current_alive_enemy_characters:
-                enemy.current_round_index = game_state.current_round_index
 
-            # Draw the player's hand
-            for hand_card in game_state.current_hand:
-                # Color the card's mana cost red if the player can't afford it
-                if can_play_card(game_state, hand_card):
-                    hand_card.card_info_mana_text_color = (50, 50, 100)
-                else:
-                    hand_card.card_info_mana_text_color = (255, 0, 0)
+    if game_state.gameplay_pause_timer > 0:
+        game_state.gameplay_pause_timer -= game_state.delta_time
+        return  # Don't update the game if it's paused
 
-            hovered_card_vertical_offset = -200
-            non_hovered_card_vertical_offset = 150
-            card_move_to_original_pos_duration = 0.3
-            card_move_up_duration = 0.15
-            non_hovered_card_duration = 0.1
+    update_characters_turns(screen, game_state)
 
-            # Update the player's hand (Check if the player clicked a card)
-            # If the mouse is over a card, move that card up a bit while moving the other cards down a bit
-            # Use reverse iteration to get the top-most (actually visible and clicked) card
-            is_some_card_hovered = False
-            for index, hand_card in enumerate(reversed(game_state.current_hand)):
-                hand_card: GameCard
-                if (not hand_card.has_been_played) and hand_card.can_be_clicked:
-                    # Create new rect that goes to bottom of the screen, so hit detection "feels" intuitive.
-                    extended_rect = pygame.Rect(hand_card.rect.left, hand_card.rect.top, hand_card.rect.width, screen.get_height())
-                    # If the card is hovered, move it up a bit
-                    if (not is_some_card_hovered) and extended_rect.collidepoint(Inputs.get_mouse_position()):
-                        is_some_card_hovered = True
-                        if not hand_card.is_self_hovered:
-                            target_pos = (hand_card.home_position[0], hand_card.home_position[1] + hovered_card_vertical_offset)
-                            hand_card.play_move_offset_animation(target_pos, card_move_up_duration, 255, 0.2)
-                            hand_card.is_self_hovered = True
-                            hand_card.is_other_card_hovered = False
-                    else:
-                        if hand_card.is_self_hovered:
-                            hand_card.play_move_offset_animation(hand_card.home_position, card_move_to_original_pos_duration, 255, 0.2)
-                            hand_card.is_self_hovered = False
 
-            # Update the player's hand cards (and check if the player clicked a card)
-            # Use reverse iteration to get the top-most (actually visible and clicked) card
-            card_played = False
-            for hand_card in reversed(game_state.current_hand):
-                hand_card: GameCard
-                if (not hand_card.has_been_played) and hand_card.can_be_clicked:
-                    if can_play_card(game_state, hand_card):
-                        # Check if the card was clicked
-                        if (not card_played) and Inputs.is_mouse_button_up(1):
-                            if hand_card.is_self_hovered and hand_card.rect.collidepoint(Inputs.get_mouse_position()):
-                                play_card(game_state, hand_card)
-                                card_played = True
+def update_characters_turns(screen: pygame.Surface, game_state: GameState):
+    if game_state.is_players_turn:
+        # Display enemies' next round's intentions
+        for enemy in game_state.current_alive_enemy_characters:
+            enemy.current_round_index = game_state.current_round_index
+
+        # Color cards' mana cost red if the player can't afford them
+        for hand_card in game_state.current_hand:
+            if can_play_card(game_state, hand_card):
+                hand_card.card_info_mana_text_color = (50, 50, 100)
+            else:
+                hand_card.card_info_mana_text_color = (255, 0, 0)
+
+        hovered_card_vertical_offset = -200
+        non_hovered_card_vertical_offset = 150
+        card_move_to_original_pos_duration = 0.3
+        card_move_up_duration = 0.15
+        non_hovered_card_duration = 0.1
+
+        # Update the player's hand (Check if the player clicked a card).
+        # If the mouse is over a card, move that card up a bit while moving the other cards down a bit.
+        # Use reverse iteration to get the top-most (actually visible and clicked) card.
+        is_some_card_hovered = False
+        for index, hand_card in enumerate(reversed(game_state.current_hand)):
+            hand_card: GameCard
+            if (not hand_card.has_been_played) and hand_card.can_be_clicked:
+                # Create a new rect that goes to the bottom of the screen, so hit detection "feels" intuitive.
+                extended_rect = pygame.Rect(hand_card.rect.left, hand_card.rect.top, hand_card.rect.width, screen.get_height())
+                # If the card is hovered, move it up a bit
+                if (not is_some_card_hovered) and extended_rect.collidepoint(Inputs.get_mouse_position()):
+                    is_some_card_hovered = True
                     if not hand_card.is_self_hovered:
-                        # If some card is hovered, move other non-hovered cards down a bit
-                        if is_some_card_hovered:
-                            if not hand_card.is_other_card_hovered:
-                                hand_card.is_other_card_hovered = True
-                                target_pos = (hand_card.home_position[0], hand_card.home_position[1] + non_hovered_card_vertical_offset)
-                                hand_card.play_move_offset_animation(target_pos, non_hovered_card_duration, 100, 0.2)
-                        # If no card is hovered, move all cards back to their original positions
-                        else:
-                            if hand_card.is_other_card_hovered:
-                                hand_card.is_other_card_hovered = False
-                                hand_card.play_move_offset_animation(hand_card.home_position, card_move_to_original_pos_duration, 255, 0.2)
+                        target_pos = (hand_card.home_position[0], hand_card.home_position[1] + hovered_card_vertical_offset)
+                        hand_card.create_and_queue_animation(target_pos, card_move_up_duration, 255, 0.2, name="hover")
+                        hand_card.is_self_hovered = True
+                        hand_card.is_other_card_hovered = False
+                else:
+                    if hand_card.is_self_hovered:
+                        hand_card.create_and_queue_animation(hand_card.home_position, card_move_to_original_pos_duration, 255, 0.2, name="stop hover")
+                        hand_card.is_self_hovered = False
 
-            # Check if the player clicked the end turn button
-            if is_end_turn_button_pressed(game_state):
-                game_state.is_players_turn = False
-                for enemy in game_state.current_alive_enemy_characters:
-                    enemy.remove_block(9999)
-                    enemy.has_completed_turn = False
+        # Update the player's hand cards (and check if the player clicked a card)
+        # Use reverse iteration to get the top-most (actually visible and clicked) card
+        card_played = False
+        for hand_card in reversed(game_state.current_hand):
+            hand_card: GameCard
+            if (not hand_card.has_been_played) and hand_card.can_be_clicked:
+                if can_play_card(game_state, hand_card):
+                    # Check if the card was clicked
+                    if (not card_played) and Inputs.is_mouse_button_up(1):
+                        if hand_card.is_self_hovered and hand_card.rect.collidepoint(Inputs.get_mouse_position()):
+                            play_card(game_state, hand_card)
+                            card_played = True
+                if not hand_card.is_self_hovered:
+                    # If some card is hovered, move other non-hovered cards down a bit
+                    if is_some_card_hovered:
+                        if not hand_card.is_other_card_hovered:
+                            hand_card.is_other_card_hovered = True
+                            target_pos = (hand_card.home_position[0], hand_card.home_position[1] + non_hovered_card_vertical_offset)
+                            hand_card.create_and_queue_animation(target_pos, non_hovered_card_duration, 100, 0.2, name="other hover (move down)")
+                    # If no card is hovered, move all cards back to their original positions
+                    else:
+                        if hand_card.is_other_card_hovered:
+                            hand_card.is_other_card_hovered = False
+                            hand_card.create_and_queue_animation(hand_card.home_position, card_move_to_original_pos_duration, 255, 0.2, name="other stop hover (move up)")
 
-                for old_card in game_state.current_hand:
-                    old_card.on_played()
-                    game_state.current_discard_pile.append(old_card.card_data)
-                game_state.gameplay_pause_timer = 2
-        else:
-            # Apply enemy intentions
+        # Check if the player clicked the end turn button
+        if is_end_turn_button_pressed(game_state):
+            game_state.is_players_turn = False
             for enemy in game_state.current_alive_enemy_characters:
-                if enemy.has_completed_turn:
-                    continue
-                enemy.has_completed_turn = True
-                enemy_intention = enemy.get_intention(game_state.current_round_index)
-                if enemy_intention.gain_health_amount > 0:
-                    enemy.gain_health(enemy_intention.gain_health_amount)
-                if enemy_intention.gain_block_amount > 0:
-                    enemy.gain_block(enemy_intention.gain_block_amount)
-                if enemy_intention.deal_damage_amount > 0:
-                    damage_player(game_state, enemy_intention.deal_damage_amount)
-                enemy.play_turn_animation(enemy_intention)
-                game_state.gameplay_pause_timer = 2
-                return
+                enemy.remove_block(9999)
+                enemy.has_completed_turn = False
 
-            game_state.current_round_index += 1
-            game_state.initialize_player_turn()
-            game_state.player_draw_new_hand_cards()
+            for old_card in game_state.current_hand:
+                old_card.on_played()
+                game_state.current_discard_pile.append(old_card.card_data)
+            game_state.gameplay_pause_timer = 2
     else:
-        raise Exception(f"Unknown fight state: {fight_state}. Guess I'll die :(")
+        # Apply enemy intentions
+        for enemy in game_state.current_alive_enemy_characters:
+            if enemy.has_completed_turn:
+                continue
+            enemy.has_completed_turn = True
+            enemy_intention = enemy.get_intention(game_state.current_round_index)
+            if enemy_intention.gain_health_amount > 0:
+                enemy.gain_health(enemy_intention.gain_health_amount)
+            if enemy_intention.gain_block_amount > 0:
+                enemy.gain_block(enemy_intention.gain_block_amount)
+            if enemy_intention.deal_damage_amount > 0:
+                damage_player(game_state, enemy_intention.deal_damage_amount)
+            enemy.play_turn_animation(enemy_intention)
+            game_state.gameplay_pause_timer = 2
+            return
+
+        game_state.current_round_index += 1
+        game_state.initialize_player_turn()
+        game_state.player_draw_new_hand_cards()
 
 
 def damage_player(game_state, amount):
@@ -265,11 +259,11 @@ def can_play_card(game_state: GameState, card: GameCard):
 
 
 def play_card(game_state: GameState, card: GameCard):
-    game_state.current_player_mana -= card.card_data.card_cost
+    game_state.current_player_mana = max(0, game_state.current_player_mana - card.card_data.card_cost)
     damage_player(game_state, card.card_data.card_self_damage)
-    game_state.current_player_block += card.card_data.card_self_block
-    game_state.current_game_save.player_health += card.card_data.card_self_heal
-    game_state.current_player_mana += card.card_data.card_change_mana
+    game_state.current_player_block = max(0, game_state.current_player_block + card.card_data.card_self_block)
+    game_state.current_game_save.player_health = min(game_state.current_game_save.player_health + card.card_data.card_self_heal, 100)
+    game_state.current_player_mana = max(0, game_state.current_player_mana + card.card_data.card_change_mana)
     game_state.change_draw_limit(card.card_data.card_change_draw_limit)
     game_state.change_draw_limit_next_turn(card.card_data.card_change_draw_limit_next_turn)
     game_state.change_mana_limit_this_combat(card.card_data.card_change_mana_limit)
@@ -284,6 +278,9 @@ def play_card(game_state: GameState, card: GameCard):
             game_state.current_alive_enemy_characters.remove(game_state.current_targeted_enemy_character)
             if len(game_state.current_alive_enemy_characters) > 0:
                 game_state.current_targeted_enemy_character = game_state.current_alive_enemy_characters[0]
+    game_state.current_hand.remove(card)
+    if card.card_data.card_draw_additional_cards > 0:
+        game_state.draw_hand_cards(card.card_data.card_draw_additional_cards)
     if card.card_data.delete:
         card.on_played(deleted=True)
     elif card.card_data.exhaust:
@@ -291,12 +288,12 @@ def play_card(game_state: GameState, card: GameCard):
         card.on_played(exhausted=True)
     else:
         game_state.current_discard_pile.append(card.card_data)
-        game_state.current_hand.remove(card)
         card.on_played()
-    game_state.reposition_all_hand_cards()
+    if card.card_data.card_draw_additional_cards <= 0:
+        game_state.reposition_cards(game_state.current_hand)
 
 
-def player_add_cards(screen: pygame.Surface, game_state: GameState):
+def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
     text_color = (255, 255, 255)
 
     # Draw the info text
@@ -306,18 +303,38 @@ def player_add_cards(screen: pygame.Surface, game_state: GameState):
     DrawCall(text_surface, text_rect, LAYER_CARD_CHOOSE_TITLE).queue(game_state.frame_buffer)
 
     # Draw the cards to the center of the screen
+    is_some_card_hovered = False
     for card in game_state.current_reward_game_cards:
-        if Inputs.is_mouse_button_up(1):
-            if card.rect.collidepoint(Inputs.get_mouse_position()):
+        if card.rect.collidepoint(Inputs.get_mouse_position()):
+            if not card.is_self_hovered:
+                card.create_and_queue_animation((card.home_position[0], card.home_position[1] - 50), 0.1, 255, 0.2, name="hover")
+                card.is_self_hovered = True
+                card.is_other_card_hovered = False
+            is_some_card_hovered = True
+            if Inputs.is_mouse_button_up(1):
                 # Card clicked, add it to the player's deck
                 game_state.current_draw_pile.append(card.card_data)
                 game_state.is_player_choosing_reward_cards = False
+                game_state.load_next_room()
+                game_state.save()
+    for card in game_state.current_reward_game_cards:
+        if is_some_card_hovered and (not card.rect.collidepoint(Inputs.get_mouse_position())):
+            if not card.is_other_card_hovered:
+                card.create_and_queue_animation(card.home_position, 0.1, 100, 0.2, name="stop hover")
+                card.is_other_card_hovered = True
+        elif not is_some_card_hovered:
+            if card.is_self_hovered or card.is_other_card_hovered:
+                card.create_and_queue_animation(card.home_position, 0.1, 255, 0.2, name="stop hover")
+                card.is_self_hovered = False
+                card.is_other_card_hovered = False
 
     # Draw a button to skip choosing a card
     rect = draw_button(game_state.frame_buffer, "Skip", pygame.Rect(screen.get_rect().centerx - 60, screen.get_rect().bottom - 100, 120, 40),
                        (0, 200, 0), (0, 50, 0), ["Skip choosing a card."])
     if is_rect_clicked(rect):
         game_state.is_player_choosing_reward_cards = False
+        game_state.load_next_room()
+        game_state.save()
 
 
 def player_remove_cards(screen: pygame.Surface, game_state: GameState):
@@ -325,6 +342,7 @@ def player_remove_cards(screen: pygame.Surface, game_state: GameState):
         for card in game_state.current_removal_game_cards:
             card.on_played()
         game_state.current_removal_game_cards.clear()
+        game_state.card_grid_layout.clear()
         game_state.is_player_removing_cards = False
         return
     text_color = (255, 255, 255)
@@ -340,16 +358,26 @@ def player_remove_cards(screen: pygame.Surface, game_state: GameState):
         if Inputs.is_mouse_button_up(1):
             if card.rect.collidepoint(Inputs.get_mouse_position()):
                 # Card clicked, remove it from the player's deck
-                game_state.current_game_save.player_cards.remove(card.card_data)
                 game_state.current_removal_game_cards.remove(card)
-                game_state.card_grid_layout.remove_item((card.set_position, card.get_position))
+                game_state.current_draw_pile.remove(card.card_data)
+                # game_state.current_game_save.player_cards.remove(card.card_data)
+                # print(f"Draw pile has {len(game_state.current_draw_pile)} cards.")
+                # print(f"Exhaust pile has {len(game_state.current_exhaust_pile)} cards.")
+                # print(f"Discard pile has {len(game_state.current_discard_pile)} cards.")
+                # print(f"Save has {len(game_state.current_game_save.player_cards)} cards.")
+                # print(f"Hand has {len(game_state.current_hand)} cards.")
+                game_state.card_grid_layout.remove_item(card)
                 card.on_played(exhausted=True)
                 card.draw_order = LAYER_OVERRIDE_FG
                 game_state.player_can_remove_cards_count -= 1
 
     # Draw a button to skip choosing a card
     if is_rect_clicked(draw_button(game_state.frame_buffer, "Skip", pygame.Rect(screen.get_rect().centerx - 60, screen.get_rect().bottom - 100, 120, 40),
-                       (0, 200, 0), (0, 50, 0), ["Skip choosing a card."])):
+                                   (0, 200, 0), (0, 50, 0), ["Skip choosing a card."])):
+        for card in game_state.current_removal_game_cards:
+            card.on_played()
+        game_state.current_removal_game_cards.clear()
+        game_state.card_grid_layout.clear()
         game_state.is_player_removing_cards = False
 
 
@@ -523,9 +551,9 @@ def is_main_menu_button_pressed(game_state: GameState, pause_background_rect: py
     button_height = 40
     rect = pygame.Rect(pause_background_rect.centerx - button_width / 2, pause_background_rect.centery, button_width, button_height)
     if rect.collidepoint(Inputs.get_mouse_position()):
-        button_color = (128, 0, 0)
+        button_color = (128, 128, 0)
     else:
-        button_color = (200, 0, 0)
+        button_color = (200, 200, 0)
     text_color = (50, 0, 0)
     rect = draw_button(game_state.frame_buffer, "Main Menu", rect, button_color, text_color, ["Return to the main menu.", "Game was last saved at the start of this room."])
     return is_rect_clicked(rect)
@@ -536,7 +564,7 @@ def is_abandon_button_pressed(game_state: GameState, pause_background_rect: pyga
         return False
     button_width = 180
     button_height = 40
-    rect = pygame.Rect(pause_background_rect.right - button_width - 5, pause_background_rect.bottom - button_height - 5, button_width, button_height)
+    rect = pygame.Rect(pause_background_rect.centerx - button_width / 2, pause_background_rect.centery + 150, button_width, button_height)
     if rect.collidepoint(Inputs.get_mouse_position()):
         button_color = (128, 0, 0)
     else:
@@ -551,7 +579,7 @@ def is_help_button_pressed(game_state: GameState, pause_background_rect: pygame.
         return False
     button_width = 180
     button_height = 40
-    rect = pygame.Rect(5, pause_background_rect.bottom - button_height - 5, button_width, button_height)
+    rect = pygame.Rect(pause_background_rect.centerx - button_width / 2, pause_background_rect.centery + 50, button_width, button_height)
     if rect.collidepoint(Inputs.get_mouse_position()):
         button_color = (128, 0, 128)
     else:
@@ -592,6 +620,7 @@ def is_game_paused(screen, game_state) -> bool:
         game_state.is_help_shown = not game_state.is_help_shown
 
     if game_state.is_help_shown:
+        # WARN: We are regenerating the pygame surface every frame here. This is not optimal.
         help_text_lines = [
             "",
             "#GENERAL",

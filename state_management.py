@@ -14,7 +14,7 @@ from utils import drawing, layout
 from utils.animations import Tween
 from utils.constants import FONT_DAMAGE_EFFECT_GENERIC
 from utils.io import ImageLibrary, load_image
-from utils.logging import log_info
+from utils.logging import log_info, log_warning
 from utils.math import initialize_dungeon_random
 
 if TYPE_CHECKING:
@@ -148,16 +148,21 @@ class GameState:
             selected_room_data: RoomData = random.choice(self.game_data.available_room_difficulties[0])
         # Selecting a special room. After 2 rooms 20% chance
         elif room_index > 1 and len(self.game_data.available_special_rooms) > 0 and random.random() < 0.2:
-            self.current_special_room_data = random.choice(self.game_data.available_special_rooms)
-            selected_room_data: RoomData = self.current_special_room_data
-        # Selecting a normal room
+            # Select a pool of special rooms based on rarity
+            rarity_values = [room.rarity for room in self.game_data.available_special_rooms]
+            selected_rarity = random.choices(rarity_values, SpecialRoomData.rarity_weights.values())[0]
+
+            # Create a pool of rooms by filtering the available rooms based on selected rarity
+            available_rooms_with_rarity = [room for room in self.game_data.available_special_rooms if room.rarity == selected_rarity]
+
+            if available_rooms_with_rarity:
+                self.current_special_room_data = random.choice(available_rooms_with_rarity)
+                selected_room_data: RoomData = self.current_special_room_data
+            else:
+                selected_room_data: RoomData = self.get_normal_room_from_room_index(room_index)
+                log_warning(f"Could not find any special rooms with rarity {selected_rarity}. Falling back to normal room.")
         else:
-            # Select a difficulty level within range of 1 of the current room index
-            base_difficulty_level = room_index + 1
-            selected_room_difficulty_level_min = max(base_difficulty_level - 1, 1)  # Never select a room with difficulty 0 in this phase
-            selected_room_difficulty_level_max = min(base_difficulty_level + 1, len(self.game_data.available_room_difficulties) - 1)
-            selected_room_difficulty_level = random.randint(selected_room_difficulty_level_min, selected_room_difficulty_level_max)
-            selected_room_data: RoomData = random.choice(self.game_data.available_room_difficulties[selected_room_difficulty_level])
+            selected_room_data: RoomData = self.get_normal_room_from_room_index(room_index)
 
         self.current_room_background = load_image(selected_room_data.room_background_sprite_path, False).convert()
 
@@ -171,8 +176,17 @@ class GameState:
             if len(self.current_alive_enemy_characters) > 0:
                 self.current_targeted_enemy_character = self.current_alive_enemy_characters[0]
 
+    def get_normal_room_from_room_index(self, index: int) -> CombatRoomData:
+        base_difficulty_level = index + 1
+        # Select a difficulty level within range of 1 of the current room index
+        selected_room_difficulty_level_min = max(base_difficulty_level - 1, 1)  # Never select a room with difficulty 0 in this phase
+        selected_room_difficulty_level_max = min(base_difficulty_level + 1, len(self.game_data.available_room_difficulties) - 1)
+        selected_room_difficulty_level = random.randint(selected_room_difficulty_level_min, selected_room_difficulty_level_max)
+        return random.choice(self.game_data.available_room_difficulties[selected_room_difficulty_level])
+
     @staticmethod
-    def spawn_enemies_from_room_data(screen_width, screen_height, room_data: CombatRoomData, enemy_character_factory: EnemyCharacterFactory, current_alive_enemy_characters: List[EnemyCharacter]):
+    def spawn_enemies_from_room_data(screen_width, screen_height,
+                                     room_data: CombatRoomData, enemy_character_factory: EnemyCharacterFactory, current_alive_enemy_characters: List[EnemyCharacter]):
         padding = 0
         enemy_width = 256
         enemy_count = len(room_data.room_enemies)
@@ -230,47 +244,64 @@ class GameState:
         if card_count < 3:
             card_count = 3
         self.draw_limit_addition_next_turn = 0
-        # Check if draw pile has enough cards
+        self.create_new_hand_cards(card_count)
+
+    def create_new_hand_cards(self, card_count: int):
+        # Check if the draw pile has enough cards
         if len(self.current_draw_pile) < card_count:
             self.add_discard_to_draw_pile()
 
-        # If there's still not enough cards, then limit the card count
+        # If there are still not enough cards, then limit the card count
         if len(self.current_draw_pile) < card_count:
             card_count = len(self.current_draw_pile)
 
-        # Select x random cards from player's deck
+        # Select x random cards from player's draw pile
         random.shuffle(self.current_draw_pile)
         selections = self.current_draw_pile[:card_count]
+        new_hand_cards = []
         for selection in selections:
-            self.draw_hand_card(selection)
-
-    def draw_hand_card(self, card_data: CardData):
-        self.game_card_factory.set_target_card_data(card_data)
-        card_reference: GameCard = self.game_card_factory.instantiate(self.draw_pile_position)
-        self.current_hand.append(card_reference)
-        self.current_draw_pile.remove(card_data)
-        x, y = self.get_position_of_hand_card_at_index(len(self.current_hand) - 1)
-        card_reference.play_draw_animation((x, y))
-        self.reposition_all_hand_cards()
-        print(f"Drawn card {card_data.card_info_name} to position {(x, y)}")
-
-    def reposition_all_hand_cards(self):
-        card_count = len(self.current_hand)
-        if card_count == 0:
-            return
+            new_hand_cards.append(self.instantiate_new_hand_card(selection))
         for index, card in enumerate(self.current_hand):
-            card: GameCard
-            x, y = self.get_position_of_hand_card_at_index(index)
-            print(f"Repositioning card {card.card_data.card_info_name} to position {(x, y)}")
-            card.play_move_animation((x, y))
+            if card in new_hand_cards:
+                card.play_draw_animation(self.get_position_of_hand_card_at_index(index))
+
+    def instantiate_new_hand_card(self, card_data: CardData) -> GameCard:
+        self.game_card_factory.set_target_card_data(card_data)
+        card = self.game_card_factory.instantiate(self.draw_pile_position)
+        self.current_hand.append(card)
+        self.current_draw_pile.remove(card_data)
+        return card
+
+    def draw_hand_cards(self, count: int):
+        log_info(f"Drawing {count} cards")
+        old_hand_cards = self.current_hand.copy()
+        self.create_new_hand_cards(count)
+        self.reposition_cards(old_hand_cards)
+
+    def reposition_cards(self, cards):
+        for index, card in enumerate(cards):
+            self.reposition_card(card, index)
+
+    def reposition_card(self, card, card_index: int):
+        x, y = self.get_position_of_hand_card_at_index(card_index)
+        # log_info(f"Repositioning card {card.card_data.card_info_name} to position {(x, y)}")
+        card.play_reposition_animation((x, y))
 
     def get_position_of_hand_card_at_index(self, index: int) -> tuple[float, float]:
         width_total = pygame.display.get_surface().get_width()
-        card_visuals_width = width_total / 1.8
-        start = (width_total - card_visuals_width) / 2
-        spacing = card_visuals_width / (max(1, len(self.current_hand) - 1))
-        x = start + (index * spacing)
         y = pygame.display.get_surface().get_height() - 0.08 * pygame.display.get_surface().get_height()
+        hand_cards_count = len(self.current_hand)
+        if hand_cards_count < 2:
+            return width_total / 2, y
+        if hand_cards_count == 2:
+            start = width_total / 2 - 200
+            spacing = 400
+            x = start + (index * spacing)
+            return x, y
+        cards_available_width = width_total / 1.8
+        start = (width_total - cards_available_width) / 2
+        spacing = cards_available_width / (max(1, hand_cards_count - 1))
+        x = start + (index * spacing)
         return x, y
 
     def generate_reward_cards(self, card_count: int = 3):
@@ -296,7 +327,7 @@ class GameState:
         for index, card in enumerate(self.current_game_save.player_cards):
             self.game_card_factory.set_target_card_data(card)
             card_reference: GameCard = self.game_card_factory.instantiate((0, 0))
-            self.card_grid_layout.add_item((card_reference.set_position, card_reference.get_position))
+            self.card_grid_layout.add_item(card_reference, (card_reference.set_position, card_reference.get_position))
             self.current_removal_game_cards.append(card_reference)
 
     def remove_block(self, amount):

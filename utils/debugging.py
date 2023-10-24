@@ -57,7 +57,9 @@ def set_stats(current_fps, current_delta_time, current_framebuffer_time, current
 def set_debug_target_object(game_object):
     global debug_target_object, debugged_object
     if debug_target_object is not None:
-        debug_target_object().is_debugged = False
+        obj = debug_target_object()
+        if obj is not None:
+            obj.is_debugged = False
     if game_object is None:
         debug_target_object = None
         debugged_object = ""

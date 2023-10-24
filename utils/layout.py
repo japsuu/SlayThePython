@@ -19,15 +19,15 @@ class GridLayout:
     def __init__(self, item_size, max_horizontal_items):
         self.item_size = item_size
         self.max_horizontal_items = max_horizontal_items
-        self.item_reposition_funcs = []
+        self.item_reposition_funcs = {}
         self.scroll_offset = 0
         self.scroll_tween: Optional[animations.Tween] = None
 
-    def add_item(self, reposition_func):
-        self.item_reposition_funcs.append(reposition_func)
+    def add_item(self, game_object, reposition_func):
+        self.item_reposition_funcs[game_object] = reposition_func
 
-    def remove_item(self, reposition_func):
-        self.item_reposition_funcs.remove(reposition_func)
+    def remove_item(self, game_object):
+        self.item_reposition_funcs.pop(game_object)
 
     def clear(self):
         self.item_reposition_funcs.clear()
@@ -40,7 +40,7 @@ class GridLayout:
         self.__handle_scroll()
         x, y = self.PADDING, self.PADDING
 
-        for index, reposition_func in enumerate(self.item_reposition_funcs):
+        for index, reposition_func in enumerate(self.item_reposition_funcs.values()):
             setter, getter = reposition_func
             item_x = x + (index % self.max_horizontal_items) * (self.item_size[0] + self.PADDING)
             item_y = 80 + y + (index // self.max_horizontal_items) * (self.item_size[1] + self.PADDING)

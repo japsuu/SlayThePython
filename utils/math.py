@@ -15,6 +15,10 @@ def lerp(a: float, b: float, t: float) -> float:
     return (1 - t) * a + t * b
 
 
+def lerp_unclamped(start, end, t):
+    return start + (end - start) * t
+
+
 def lerp_tuple(a: tuple[float, float], b: tuple[float, float], t: float) -> tuple[float, float]:
     """
     Linearly interpolate on the scale given by a to b, using t as the point on that scale.

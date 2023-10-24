@@ -15,11 +15,11 @@ last_combat_room_index: int = -1
 
 
 class SpecialRoomAction:
-    def __init__(self, action_name, action_description, change_health_amount, reward_cards_count, remove_cards_amount, change_mana_permanent):
+    def __init__(self, action_name, action_description, change_health_amount, choose_from_cards_count, remove_cards_amount, change_mana_permanent):
         self.action_name: str = action_name
         self.action_description: str = action_description
         self.change_health_amount: int = change_health_amount
-        self.reward_cards_count: int = reward_cards_count
+        self.choose_from_cards_count: int = choose_from_cards_count
         self.remove_cards_amount: int = remove_cards_amount
         self.change_mana_permanent: int = change_mana_permanent
 
@@ -29,7 +29,7 @@ class SpecialRoomAction:
             data["action_name"],
             data["action_description"],
             data["change_health_amount"],
-            data["reward_cards_count"],
+            data["choose_from_cards_count"],
             data["remove_cards_amount"],
             data["change_mana_permanent"],
         )
@@ -42,8 +42,8 @@ class SpecialRoomAction:
             else:
                 description.append(f"Lose {-self.change_health_amount} health.")
             description.append("")
-        if self.reward_cards_count > 0:
-            description.append(f"Choose a card from {self.reward_cards_count} random cards to add to your deck.")
+        if self.choose_from_cards_count > 0:
+            description.append(f"Choose a card from {self.choose_from_cards_count} random cards to add to your deck.")
             description.append("")
         if self.remove_cards_amount > 0:
             description.append(f"Remove {self.remove_cards_amount} cards from your deck.")
@@ -64,19 +64,19 @@ class SpecialRoomAction:
                 game_state.current_game_save.player_health = max(game_state.current_game_save.player_health + self.change_health_amount, 0)
             else:
                 game_state.current_game_save.player_health = min(game_state.current_game_save.player_health + self.change_health_amount, 100)
-            print(f"Player health changed from {game_state.current_game_save.player_health - self.change_health_amount} to {game_state.current_game_save.player_health}.")
-        if self.reward_cards_count > 0:
-            game_state.generate_reward_cards(self.reward_cards_count)
+            log_info(f"Player health changed from {game_state.current_game_save.player_health - self.change_health_amount} to {game_state.current_game_save.player_health}.")
+        if self.choose_from_cards_count > 0:
+            game_state.generate_reward_cards(self.choose_from_cards_count)
             game_state.is_player_choosing_reward_cards = True
-            print(f"Player is choosing {self.reward_cards_count} reward cards.")
+            log_info(f"Player is choosing from {self.choose_from_cards_count} reward cards.")
         if self.remove_cards_amount > 0:
             game_state.player_can_remove_cards_count = self.remove_cards_amount
             game_state.generate_removal_cards()
             game_state.is_player_removing_cards = True
-            print(f"Player is choosing {self.remove_cards_amount} cards to remove.")
+            log_info(f"Player is choosing {self.remove_cards_amount} cards to remove.")
         if self.change_mana_permanent > 0:
             game_state.current_game_save.player_base_mana = max(game_state.current_game_save.player_base_mana + self.change_mana_permanent, 0)
-            print(f"Player base mana changed from {game_state.current_game_save.player_base_mana - self.change_mana_permanent} to {game_state.current_game_save.player_base_mana}.")
+            log_info(f"Player base mana changed from {game_state.current_game_save.player_base_mana - self.change_mana_permanent} to {game_state.current_game_save.player_base_mana}.")
 
 
 class RoomData:
@@ -102,14 +102,22 @@ class RoomData:
 
 
 class SpecialRoomData(RoomData):
-    def __init__(self, room_name, room_description, room_background_sprite_path, room_actions):
+    rarity_weights = {
+        "common": 60,       # 60% chance
+        "uncommon": 30,     # 30% chance
+        "rare": 10          # 10% chance
+    }
+
+    def __init__(self, rarity, room_name, room_description, room_background_sprite_path, room_actions):
         super().__init__(room_background_sprite_path)
+        self.rarity: str = rarity
         self.room_name: str = room_name
         self.room_description: str = room_description
         self.room_available_actions: List[SpecialRoomAction] = room_actions
 
     def to_dict(self):
         return {
+            "rarity": self.rarity,
             "room_name": self.room_name,
             "room_description": self.room_description,
             "room_background_sprite_path": self.room_background_sprite_path,
@@ -119,6 +127,7 @@ class SpecialRoomData(RoomData):
     @classmethod
     def from_dict(cls, data):
         return cls(
+            data["rarity"],
             data["room_name"],
             data["room_description"],
             data["room_background_sprite_path"],
