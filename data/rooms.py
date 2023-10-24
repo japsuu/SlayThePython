@@ -38,9 +38,9 @@ class SpecialRoomAction:
         description = []
         if self.change_health_amount != 0:
             if self.change_health_amount > 0:
-                description.append(f"Gain {self.change_health_amount} health.")
+                description.append(f"Gain {abs(self.change_health_amount)} health.")
             else:
-                description.append(f"Lose {-self.change_health_amount} health.")
+                description.append(f"Lose {abs(self.change_health_amount)} health.")
             description.append("")
         if self.choose_from_cards_count > 0:
             description.append(f"Choose a card from {self.choose_from_cards_count} random cards to add to your deck.")
@@ -50,9 +50,9 @@ class SpecialRoomAction:
             description.append("")
         if self.change_mana_permanent != 0:
             if self.change_mana_permanent > 0:
-                description.append(f"Gain {self.change_mana_permanent} additional mana at the start of every turn.")
+                description.append(f"Gain {abs(self.change_mana_permanent)} additional mana at the start of every turn.")
             else:
-                description.append(f"Lose {-self.change_mana_permanent} mana at the start of every turn.")
+                description.append(f"Lose {abs(self.change_mana_permanent)} mana at the start of every turn.")
             description.append("")
         if len(description) > 0:
             description.pop()

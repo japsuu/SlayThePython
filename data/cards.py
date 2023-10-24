@@ -125,34 +125,34 @@ class CardData:
             description += f"Draw {draw_additional_cards} cards.\n\n"
         if change_draw_limit != 0:
             if change_draw_limit > 0:
-                description += f"Increase your draw limit by {change_draw_limit}\nfor the rest of this combat.\n\n"
+                description += f"Increase your draw limit by {abs(change_draw_limit)}\nfor the rest of this combat.\n\n"
             else:
-                description += f"Decrease your draw limit by {change_draw_limit}\nfor the rest of this combat.\n\n"
+                description += f"Decrease your draw limit by {abs(change_draw_limit)}\nfor the rest of this combat.\n\n"
         if change_draw_limit_next_turn != 0:
             if change_draw_limit_next_turn > 0:
-                description += f"Increase your draw limit by {change_draw_limit_next_turn}\nfor the next turn.\n\n"
+                description += f"Increase your draw limit by {abs(change_draw_limit_next_turn)}\nfor the next turn.\n\n"
             else:
-                description += f"Decrease your draw limit by {change_draw_limit_next_turn}\nfor the next turn.\n\n"
+                description += f"Decrease your draw limit by {abs(change_draw_limit_next_turn)}\nfor the next turn.\n\n"
         if change_mana_limit != 0:
             if change_mana_limit > 0:
-                description += f"Increase your mana limit by {change_mana_limit}\nfor the rest of this combat.\n\n"
+                description += f"Increase your mana limit by {abs(change_mana_limit)}\nfor the rest of this combat.\n\n"
             else:
-                description += f"Decrease your mana limit by {change_mana_limit}\nfor the rest of this combat.\n\n"
+                description += f"Decrease your mana limit by {abs(change_mana_limit)}\nfor the rest of this combat.\n\n"
         if change_mana_limit_permanent != 0:
             if change_mana_limit_permanent > 0:
-                description += f"Increase your mana limit by {change_mana_limit_permanent} permanently.\n\n"
+                description += f"Increase your mana limit by {abs(change_mana_limit_permanent)} permanently.\n\n"
             else:
-                description += f"Decrease your mana limit by {change_mana_limit_permanent} permanently.\n\n"
+                description += f"Decrease your mana limit by {abs(change_mana_limit_permanent)} permanently.\n\n"
         if change_mana != 0:
             if change_mana > 0:
-                description += f"Gain {change_mana} mana.\n\n"
+                description += f"Gain {abs(change_mana)} mana.\n\n"
             else:
-                description += f"Lose {change_mana} mana.\n\n"
+                description += f"Lose {abs(change_mana)} mana.\n\n"
         if change_mana_next_turn != 0:
             if change_mana_next_turn > 0:
-                description += f"Gain {change_mana_next_turn} mana next turn.\n\n"
+                description += f"Gain {abs(change_mana_next_turn)} mana next turn.\n\n"
             else:
-                description += f"Lose {change_mana_next_turn} mana next turn.\n\n"
+                description += f"Lose {abs(change_mana_next_turn)} mana next turn.\n\n"
         if description == "":
             description = "This card does nothing.\n\n"
         if exhaust:
