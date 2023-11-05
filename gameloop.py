@@ -31,12 +31,14 @@ def update(screen: pygame.Surface, game_state: GameState):
     if is_game_paused(screen, game_state):
         return
 
-    if game_state.is_player_choosing_reward_cards:
-        draw_player_reward_cards(screen, game_state)
-        return
-
-    if game_state.is_player_removing_cards:
-        player_remove_cards(screen, game_state)
+    if game_state.is_player_choosing_reward_cards or game_state.is_player_removing_cards:
+        if game_state.is_player_choosing_reward_cards:
+            draw_player_reward_cards(screen, game_state)
+        if game_state.is_player_removing_cards:
+            player_remove_cards(screen, game_state)
+        if (not game_state.is_player_choosing_reward_cards) and (not game_state.is_player_removing_cards):
+            game_state.load_next_room()
+            game_state.save()
         return
 
     if game_state.current_special_room_data:
@@ -388,8 +390,6 @@ def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
                 # Card clicked, add it to the player's deck
                 game_state.current_draw_pile.append(card.card_data)
                 game_state.is_player_choosing_reward_cards = False
-                game_state.load_next_room()
-                game_state.save()
     for card in game_state.current_reward_game_cards:
         if is_some_card_hovered and (not card.rect.collidepoint(Inputs.get_mouse_position())):
             if not card.is_other_card_hovered:
@@ -406,8 +406,6 @@ def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
                        (0, 200, 0), (0, 50, 0), ["Skip choosing a card."])
     if is_rect_clicked(rect):
         game_state.is_player_choosing_reward_cards = False
-        game_state.load_next_room()
-        game_state.save()
         audio.play_one_shot_delayed(constants.skip_sound, 0.2)
         audio.play_one_shot(constants.button_sound)
 
@@ -433,11 +431,6 @@ def player_remove_cards(screen: pygame.Surface, game_state: GameState):
         if Inputs.is_mouse_button_up(1):
             if card.rect.collidepoint(Inputs.get_mouse_position()):
                 # Card clicked, remove it from the player's deck
-                print(f"Draw pile has {len(game_state.current_draw_pile)} cards.")
-                print(f"Exhaust pile has {len(game_state.current_exhaust_pile)} cards.")
-                print(f"Discard pile has {len(game_state.current_discard_pile)} cards.")
-                print(f"Save has {len(game_state.current_game_save.player_cards)} cards.")
-                print(f"Hand has {len(game_state.current_hand)} cards.")
                 game_state.current_removal_game_cards.remove(card)
                 game_state.current_draw_pile.remove(card.card_data)
                 game_state.card_grid_layout.remove_item(card)
