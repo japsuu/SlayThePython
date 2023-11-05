@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING
 
 import pygame
 
-from data import rooms
 from data.cards import CardData
 from data.rooms import CombatRoomData, SpecialRoomData, RoomData
 from data.saves import GameSave, display_blocking_save_selection_screen
 from game_objects import EnemyCharacter, GameCard, GameObjectCollection, EnemyCharacterFactory, GameCardFactory, DamageNumberVisualEffectFactory
-from utils import drawing, layout
+from utils import drawing, layout, audio, constants
 from utils.animations import Tween
 from utils.constants import FONT_DAMAGE_EFFECT_GENERIC
 from utils.io import ImageLibrary, load_image
@@ -91,6 +90,7 @@ class GameState:
         Warning: This function is blocking and will not return until the player has chosen a save.
         """
         pygame.display.set_caption("Slay the Python - Initializing...")
+        audio.play_one_shot(constants.scene_change_sound)
         available_save_games = GameSave.list_available_save_games()
         self.current_game_save = GameSave.load_save_game(display_blocking_save_selection_screen(pygame.display.get_surface(), self.clock, available_save_games))
         self.is_players_turn = True
@@ -102,6 +102,7 @@ class GameState:
             self.current_draw_pile.append(card)
         self.initialize_new_room(self.current_game_save)
         GameSave.save(self.current_game_save)
+        audio.play_one_shot(constants.scene_change_sound)
 
     def save(self):
         self.update_save_cards()
@@ -138,6 +139,7 @@ class GameState:
         self.current_special_room_data = None
         self.add_discard_to_draw_pile()
         self.initialize_player_turn()
+        audio.play_one_shot_delayed(constants.enter_room_sound, 0.5)
 
         # Select a random room with the correct difficulty
         # Selecting a boss room
@@ -147,10 +149,9 @@ class GameState:
         elif room_index == 0:
             selected_room_data: RoomData = random.choice(self.game_data.available_room_difficulties[0])
         # Selecting a special room. After 2 rooms 20% chance
-        elif room_index > 1 and len(self.game_data.available_special_rooms) > 0 and random.random() < 0.2:
+        elif room_index > 1 and len(self.game_data.available_special_rooms) > 0 and random.random() < 1.2:  # WARN: For testing purposes, the chance is increased to 100%
             # Select a pool of special rooms based on rarity
-            rarity_values = [room.rarity for room in self.game_data.available_special_rooms]
-            selected_rarity = random.choices(rarity_values, SpecialRoomData.rarity_weights.values())[0]
+            selected_rarity = random.choices(list(SpecialRoomData.rarity_weights.keys()), list(SpecialRoomData.rarity_weights.values()))[0]
 
             # Create a pool of rooms by filtering the available rooms based on selected rarity
             available_rooms_with_rarity = [room for room in self.game_data.available_special_rooms if room.rarity == selected_rarity]
@@ -216,6 +217,7 @@ class GameState:
         for card in self.current_discard_pile:
             self.current_draw_pile.append(card)
         self.current_discard_pile.clear()
+        audio.play_one_shot(constants.shuffle_sound)
 
     def change_mana_limit_this_combat(self, amount):
         self.player_base_mana_limit_addition_this_combat += amount
@@ -241,8 +243,8 @@ class GameState:
         card_count = self.current_draw_limit + self.draw_limit_addition_next_turn
         if card_count > 8:
             card_count = 8
-        if card_count < 3:
-            card_count = 3
+        if card_count < 1:
+            card_count = 1
         self.draw_limit_addition_next_turn = 0
         self.create_new_hand_cards(card_count)
 
@@ -259,8 +261,11 @@ class GameState:
         random.shuffle(self.current_draw_pile)
         selections = self.current_draw_pile[:card_count]
         new_hand_cards = []
+        delay = 0
         for selection in selections:
             new_hand_cards.append(self.instantiate_new_hand_card(selection))
+            audio.play_one_shot_delayed(random.choice(constants.deal_one_soundbank), delay)
+            delay += 0.15
         for index, card in enumerate(self.current_hand):
             if card in new_hand_cards:
                 card.play_draw_animation(self.get_position_of_hand_card_at_index(index))
@@ -306,16 +311,43 @@ class GameState:
 
     def generate_reward_cards(self, card_count: int = 3):
         self.current_reward_game_cards.clear()
-        # Select X random cards from all available cards
-        selections = random.sample(self.game_data.available_cards, k=card_count)
+        selections = []
+        for i in range(card_count):
+            # Select a pool of cards based on rarity using CardData.rarity_weights
+            selected_rarity = random.choices(list(CardData.rarity_weights.keys()), list(CardData.rarity_weights.values()))[0]
+            available_cards_with_rarity = []
+            for card in self.game_data.available_cards:
+                if selected_rarity == card.card_rarity:
+                    available_cards_with_rarity.append(card)
+            if available_cards_with_rarity:
+                infinite_loop_breaker = 0
+                while True:
+                    infinite_loop_breaker += 1
+                    if infinite_loop_breaker > 1000:
+                        raise Exception("Infinite loop detected while selecting reward cards.")
+                    selected_card = random.choice(available_cards_with_rarity)
+                    if selected_card not in selections:
+                        selections.append(selected_card)
+                        break
+            else:
+                log_warning(f"Could not find any cards with rarity {selected_rarity}. Selecting a random card.")
+                selections.append(random.choice(self.game_data.available_cards))
+
         for index, selection in enumerate(selections):
             # Evenly distribute the cards at the center of the screen
             width_total = pygame.display.get_surface().get_width()
             card_visuals_width = width_total / 1.8
             start = (width_total - card_visuals_width) / 2
-            spacing = card_visuals_width / (card_count - 1)
-            x = start + (index * spacing)
             y = pygame.display.get_surface().get_height() / 2
+            if len(selections) < 2:
+                x = width_total / 2
+            elif len(selections) == 2:
+                start = width_total / 2 - 200
+                spacing = 400
+                x = start + (index * spacing)
+            else:
+                spacing = card_visuals_width / (card_count - 1)
+                x = start + (index * spacing)
             self.game_card_factory.set_target_card_data(selection)
             card_reference = self.game_card_factory.instantiate((x, y))
             self.current_reward_game_cards.append(card_reference)
@@ -324,7 +356,7 @@ class GameState:
         self.card_grid_layout.clear()
         self.current_removal_game_cards.clear()
         # Instantiate all cards in the player's deck as GameCards
-        for index, card in enumerate(self.current_game_save.player_cards):
+        for index, card in enumerate(self.current_draw_pile + self.current_discard_pile + self.current_exhaust_pile):
             self.game_card_factory.set_target_card_data(card)
             card_reference: GameCard = self.game_card_factory.instantiate((0, 0))
             self.card_grid_layout.add_item(card_reference, (card_reference.set_position, card_reference.get_position))
@@ -349,9 +381,6 @@ class GameState:
 
 class GameData:
     def __init__(self):
-        # Consts
-        self.boss_room_index: int = rooms.last_combat_room_index + 1
-
         # Enemies
         # self.available_enemy_spawn_data = EnemySpawnData.load_available_enemies()
         # self.available_boss_spawn_data = EnemySpawnData.load_available_bosses()
@@ -364,11 +393,14 @@ class GameData:
         # Rooms
         self.available_room_difficulties: List[List[CombatRoomData]] = CombatRoomData.load_available_combat_rooms()
         room_count_in_total = sum([len(rooms_for_difficulty) for rooms_for_difficulty in self.available_room_difficulties])
-        log_info(f"Successfully loaded {len(self.available_room_difficulties)} room difficulties with {room_count_in_total} rooms in total.")
+        count_of_possible_runs = room_count_in_total ** 3
+        log_info(f"Successfully loaded {len(self.available_room_difficulties)} room difficulties. {count_of_possible_runs} distinct room configurations available.")
         self.available_special_rooms: List[SpecialRoomData] = SpecialRoomData.load_available_special_rooms()
         log_info(f"Successfully loaded {len(self.available_special_rooms)} special rooms.")
         self.available_boss_rooms: List[CombatRoomData] = CombatRoomData.load_available_boss_rooms()
         log_info(f"Successfully loaded {len(self.available_boss_rooms)} boss rooms.")
+
+        self.boss_room_index: int = len(self.available_room_difficulties)
 
         # Images
         self.image_library = ImageLibrary()

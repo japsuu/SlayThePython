@@ -1,6 +1,7 @@
 import pygame
 
 from data.cards import CardData
+from utils.io import load_sound, get_sounds_in_directory
 
 # Ensure pygame is initialized
 pygame.init()
@@ -9,6 +10,8 @@ SAVE_GAME_FOLDER = "GameSaves"
 
 PLAYER_STARTING_HEALTH = 100
 PLAYER_STARTING_CARDS = CardData.load_starting_cards()
+
+ENEMY_SPRITE_SCALING_FACTOR = 8
 
 # Fonts
 BASE_FONT_PATH = "Content/Fonts/YoungSerif-Regular.ttf"
@@ -20,6 +23,8 @@ FONT_UI_L = pygame.font.Font(BASE_FONT_PATH, 25)
 FONT_UI_XL = pygame.font.Font(BASE_FONT_PATH, 35)
 FONT_UI_XXL = pygame.font.Font(BASE_FONT_PATH, 45)
 FONT_UI_XXXL = pygame.font.Font(BASE_FONT_PATH, 55)
+SYMBOLS_FONT = pygame.font.Font("Content/Fonts/GoddessSymbols.ttf", 20)
+SYMBOLS_FONT_BG = pygame.font.Font("Content/Fonts/GoddessSymbols.ttf", 24)
 
 # UI font constants
 FONT_CARD_CHOOSE = FONT_UI_M
@@ -72,3 +77,41 @@ ANIM_PRIORITY_DEFAULT = 0
 ANIM_PRIORITY_CARD_DRAW = ANIM_PRIORITY_DEFAULT + 500
 ANIM_PRIORITY_CARD_REPOSITION = ANIM_PRIORITY_CARD_DRAW + 500
 ANIM_PRIORITY_CARD_DISCARD = ANIM_PRIORITY_CARD_REPOSITION + 500
+
+# AUDIO
+
+# Ambient
+AMBIENT_LOOP_SOUND = (load_sound("Content/Audio/Ambient/dungeon_loop.wav"), "ambient_loop")
+
+# Spooks
+SPOOK_SOUNDBANK = get_sounds_in_directory("Content/Audio/Spooks")
+
+# Cards
+shuffle_sound = (load_sound("Content/Audio/Cards/shuffle.wav"), "shuffle")
+deal_hand_sound = (load_sound("Content/Audio/Cards/deal_hand.wav"), "deal_hand")
+deal_one_soundbank = get_sounds_in_directory("Content/Audio/Cards/Deals")
+play_card_sound = (load_sound("Content/Audio/Plays/play_card.wav"), "play_card")
+card_move_1_sound = (load_sound("Content/Audio/Cards/card_move_1.wav"), "card_move_1")
+card_move_2_sound = (load_sound("Content/Audio/Cards/card_move_2.wav"), "card_move_2")
+
+# Plays
+gain_block_sound = (load_sound("Content/Audio/Plays/gain_block.wav"), "gain_block")
+gain_mana_sound = (load_sound("Content/Audio/Plays/gain_energy.wav"), "gain_energy")
+exhaust_card_sound = (load_sound("Content/Audio/Plays/exhaust.wav"), "exhaust")
+destroy_card_sound = (load_sound("Content/Audio/Plays/destroy.wav"), "destroy")
+skip_sound = (load_sound("Content/Audio/Plays/skip.wav"), "skip")
+end_turn_sound = (load_sound("Content/Audio/Plays/end_turn.wav"), "end_turn")
+
+# UI
+scene_change_sound = (load_sound("Content/Audio/UI/scene_change.wav"), "scene_change")
+button_sound = (load_sound("Content/Audio/UI/button.wav"), "button")
+show_rewards_sound = (load_sound("Content/Audio/UI/show_rewards.wav"), "show_rewards")
+enter_room_sound = (load_sound("Content/Audio/UI/enter_room.wav"), "enter_room")
+
+# Characters
+damaged_sound = (load_sound("Content/Audio/Characters/damaged.wav"), "damaged")
+blocked_sound = (load_sound("Content/Audio/Characters/blocked.wav"), "blocked")
+killed_sound = (load_sound("Content/Audio/Characters/killed.wav"), "killed")
+attacked_sound = (load_sound("Content/Audio/Characters/attacked.wav"), "attacked")
+healed_sound = (load_sound("Content/Audio/Characters/healed.wav"), "healed")
+open_backpack_sound = (load_sound("Content/Audio/Characters/open_backpack.wav"), "open_backpack")

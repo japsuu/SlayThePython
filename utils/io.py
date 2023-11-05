@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import pygame
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 # def transform_resource_path(relative_path):     # PyInstaller support
 #     # noinspection PyBroadException
 #     try:
-#         # noinspection PyUnresolvedReferences,PyProtectedMember
+#         # noinspection PyUnresolvedReferences, PyProtectedMember
 #         base_path = sys._MEIPASS
 #     except Exception:
 #         base_path = os.path.abspath(".")
@@ -30,6 +31,19 @@ def load_image(path, convert_alpha=True):
         raise SystemExit(f"Error loading image @ {path}: {str(e)}")
 
 
+def load_sound(filename):
+    sound = pygame.mixer.Sound(filename)
+    return sound
+
+
+def get_sounds_in_directory(folder_path):
+    sounds = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".wav"):
+            sounds.append((load_sound(os.path.join(folder_path, filename)), f"bank_sound_{filename}"))
+    return sounds
+
+
 class ImageLibrary:
     def __init__(self):
         # UI
@@ -41,6 +55,7 @@ class ImageLibrary:
         self.icon_block: pygame.Surface = load_image("Content/Sprites/UI/icon_block.png")
         self.icon_health: pygame.Surface = load_image("Content/Sprites/UI/icon_health.png")
         # Intention icons
+        self.icon_intention_negative: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_negative.png")
         self.icon_intention_block: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_block.png")
         self.icon_intention_buff: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_buff.png")
         self.icon_intention_unknown: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_unknown.png")

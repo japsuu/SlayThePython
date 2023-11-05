@@ -6,6 +6,7 @@ import os
 
 import pygame
 
+from utils import constants, audio
 from utils.constants import SAVE_GAME_FOLDER, FONT_SAVE_SELECTION, FONT_SAVE_SELECTION_S
 from data.cards import CardData
 from utils.input import Inputs
@@ -90,6 +91,10 @@ class GameSave:
                     save_game_name = os.path.splitext(filename)[0]
                     save_games.append(save_game_name)
         return save_games
+    
+    
+def is_valid_file_name_character(char: str) -> bool:
+    return char.isalnum() or char == "_" or char == " "
 
 
 def display_blocking_save_selection_screen(screen, clock, available_save_games):
@@ -110,9 +115,12 @@ def display_blocking_save_selection_screen(screen, clock, available_save_games):
             if save_game_name and (save_game_name not in available_save_games):
                 input_active = False
         elif Inputs.is_key_pressed(pygame.K_BACKSPACE):
-            save_game_name = save_game_name[:-1]
+            if len(save_game_name) > 0:
+                save_game_name = save_game_name[:-1]
         elif len(save_game_name) < 20:
-            save_game_name += Inputs.get_unicode()
+            unicode = Inputs.get_unicode()
+            if unicode and is_valid_file_name_character(unicode):
+                save_game_name += unicode
 
         # Animate the input ticker
         if input_ticker_flip:
@@ -169,6 +177,7 @@ def display_blocking_save_selection_screen(screen, clock, available_save_games):
                 if Inputs.is_mouse_button_up(1):
                     save_game_name = existing_game_save
                     input_active = False
+                    audio.play_one_shot(constants.button_sound)
                 color = (80, 80, 80)
             button.fill(color)
             screen.blit(button, button_rect)

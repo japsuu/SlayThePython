@@ -1,6 +1,7 @@
 [
   {
     "card_info_name": "Strike",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 6,
     "card_target_remove_block": 0,
@@ -21,6 +22,7 @@
   },
   {
     "card_info_name": "Strike",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 6,
     "card_target_remove_block": 0,
@@ -41,6 +43,7 @@
   },
   {
     "card_info_name": "Strike",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 6,
     "card_target_remove_block": 0,
@@ -61,6 +64,7 @@
   },
   {
     "card_info_name": "Strike",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 6,
     "card_target_remove_block": 0,
@@ -81,6 +85,7 @@
   },
   {
     "card_info_name": "Strike",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 6,
     "card_target_remove_block": 0,
@@ -101,6 +106,7 @@
   },
   {
     "card_info_name": "Defend",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 0,
     "card_target_remove_block": 0,
@@ -121,6 +127,7 @@
   },
   {
     "card_info_name": "Defend",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 0,
     "card_target_remove_block": 0,
@@ -141,6 +148,7 @@
   },
   {
     "card_info_name": "Defend",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 0,
     "card_target_remove_block": 0,
@@ -161,6 +169,7 @@
   },
   {
     "card_info_name": "Defend",
+    "card_rarity": "common",
     "card_damage_all": 0,
     "card_target_damage": 0,
     "card_target_remove_block": 0,
@@ -181,6 +190,7 @@
   },
   {
     "card_info_name": "Crush",
+    "card_rarity": "uncommon",
     "card_damage_all": 0,
     "card_target_damage": 10,
     "card_target_remove_block": 7,

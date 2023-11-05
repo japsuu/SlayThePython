@@ -1,0 +1,40 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_3.png",
+  "encountered_at_levels": "10-16",
+  "room_enemies":
+  [
+    {
+      "name": "Emerald Warlock",
+      "max_health_min": 90,
+      "max_health_max": 100,
+      "sprite_path": "Content/Sprites/Enemies/Emerald Warlock.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 25,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 15,
+          "deal_damage_amount": 25
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 20
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 35
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,15 @@ import json
 
 
 class CardData:
+    rarity_weights = {
+        "common": 60,       # 60% chance
+        "uncommon": 30,     # 30% chance
+        "rare": 10          # 10% chance
+    }
+
     def __init__(self, card_info_name,
                  card_info_description,
+                 card_rarity,
                  card_damage_all,
                  card_target_damage,
                  card_target_remove_block,
@@ -23,6 +30,7 @@ class CardData:
                  sprite_path):
         self.card_info_name: str = card_info_name
         self.card_info_description: str = card_info_description
+        self.card_rarity: str = card_rarity
         self.card_damage_all: int = card_damage_all
         self.card_target_damage: int = card_target_damage
         self.card_target_remove_block: int = card_target_remove_block
@@ -44,6 +52,7 @@ class CardData:
     def to_dict(self):
         return {
             "card_info_name": self.card_info_name,
+            "card_rarity": self.card_rarity,
             "card_damage_all": self.card_damage_all,
             "card_target_damage": self.card_target_damage,
             "card_target_remove_block": self.card_target_remove_block,
@@ -67,6 +76,7 @@ class CardData:
         return CardData(
             self.card_info_name,
             self.card_info_description,
+            self.card_rarity,
             self.card_damage_all,
             self.card_target_damage,
             self.card_target_remove_block,
@@ -165,6 +175,7 @@ class CardData:
         return cls(
             name,
             description,
+            data["card_rarity"],
             damage_all,
             target_damage,
             target_remove_block,

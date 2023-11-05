@@ -1,0 +1,35 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_1.png",
+  "encountered_at_levels": "10-16",
+  "room_enemies":
+  [
+    {
+      "name": "Spectral Sentinel",
+      "max_health_min": 999,
+      "max_health_max": 999,
+      "sprite_path": "Content/Sprites/Enemies/Spectral Sentinel.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 999,
+          "deal_damage_amount": 28
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 999,
+          "deal_damage_amount": 32
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 999,
+          "deal_damage_amount": 18
+        },
+        {
+          "gain_health_amount": -9999,
+          "gain_block_amount": -9999,
+          "deal_damage_amount": 0
+        }
+      ]
+    }
+  ]
+}

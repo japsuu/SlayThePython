@@ -1,0 +1,25 @@
+{
+  "rarity": "uncommon",
+  "room_name": "Campfire",
+  "room_description": "The fire is still burning. The room seems to be empty, and you feel the inviting warmth of the fire.",
+  "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_campfire.png",
+  "room_available_actions":
+  [
+    {
+      "action_name": "Rest",
+      "action_description": "Hit the hay and recover.",
+      "change_health_amount": 24,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 0,
+      "change_mana_permanent": 0
+    },
+    {
+      "action_name": "Burn",
+      "action_description": "Get rid of the dead weight.",
+      "change_health_amount": 0,
+      "choose_from_cards_count": 0,
+      "remove_cards_amount": 1,
+      "change_mana_permanent": 0
+    }
+  ]
+}

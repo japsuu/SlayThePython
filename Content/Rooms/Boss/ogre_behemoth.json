@@ -1,0 +1,65 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_3.png",
+  "encountered_at_levels": "0-0",
+  "room_enemies":
+  [
+    {
+      "name": "Ogre Behemoth",
+      "max_health_min": 100,
+      "max_health_max": 120,
+      "sprite_path": "Content/Sprites/Bosses/Ogre Behemoth Boss.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 40
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 12
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 4
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        }
+      ]
+    }
+  ]
+}

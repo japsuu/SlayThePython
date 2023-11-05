@@ -1,0 +1,35 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_0.png",
+  "encountered_at_levels": "1-6",
+  "room_enemies":
+  [
+    {
+      "name": "Decayed Drifter",
+      "max_health_min": 30,
+      "max_health_max": 38,
+      "sprite_path": "Content/Sprites/Enemies/Decayed Drifter.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 4,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 4,
+          "deal_damage_amount": 4
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 12
+        }
+      ]
+    }
+  ]
+}

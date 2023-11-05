@@ -2,11 +2,12 @@
 # Project: Slay the Python
 # Author: Jasper Honkasalo
 #
+import random
 import time
 
 import pygame
 
-from utils import debugging
+from utils import debugging, audio, constants
 from gameloop import update
 from state_management import GameState
 from utils.input import Inputs
@@ -18,10 +19,15 @@ DEBUG_HELP = "(F1: Toggle debug, F2: Toggle extended referrer debug, F3: Debug o
 def main():
     # Pygame setup
     pygame.init()
+    if len(constants.SPOOK_SOUNDBANK) > 0:
+        audio.add_looping_soundbank(constants.SPOOK_SOUNDBANK, lambda: random.randint(60, 90), True)
+    if constants.AMBIENT_LOOP_SOUND is not None:
+        audio.play_looping(constants.AMBIENT_LOOP_SOUND)
     screen = pygame.display.set_mode((1280, 720))
     pygame.display.set_caption("Slay the Python")
     clock = pygame.time.Clock()
     game_state = GameState(screen, clock)
+    game_state.enter_main_menu()
 
     debugging.initialize_debug_window(screen)
 
@@ -33,6 +39,8 @@ def main():
             running = False
 
         start_frame(screen, game_state)
+
+        audio.update(game_state.delta_time)
 
         # If there is no save (the game was just opened or a run has just ended), start a new save
         if game_state.current_game_save is None:
