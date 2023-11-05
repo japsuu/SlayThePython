@@ -5,13 +5,111 @@
   [
     {
       "name": "Revenant of the Abyss",
-      "max_health_min": 1,
-      "max_health_max": 3,
+      "max_health_min": 120,
+      "max_health_max": 140,
       "sprite_path": "Content/Sprites/Bosses/Revenant of the Abyss Boss.png",
       "intention_pattern": [
         {
           "gain_health_amount": 0,
           "gain_block_amount": 0,
+          "deal_damage_amount": 36
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 16
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 12
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 28
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        }
+      ]
+    },
+    {
+      "name": "Revenant of the Abyss",
+      "max_health_min": 140,
+      "max_health_max": 160,
+      "sprite_path": "Content/Sprites/Bosses/Revenant of the Abyss Boss.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 36
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 12
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 16
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 28
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
           "deal_damage_amount": 0
         }
       ]

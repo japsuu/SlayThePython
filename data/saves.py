@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import sys
 from typing import TYPE_CHECKING
 
 import json
@@ -91,8 +93,8 @@ class GameSave:
                     save_game_name = os.path.splitext(filename)[0]
                     save_games.append(save_game_name)
         return save_games
-    
-    
+
+
 def is_valid_file_name_character(char: str) -> bool:
     return char.isalnum() or char == "_" or char == " "
 
@@ -110,7 +112,7 @@ def display_blocking_save_selection_screen(screen, clock, available_save_games):
         Inputs.handle_input_events()
         if Inputs.should_quit():
             pygame.quit()
-            quit()
+            sys.exit()
         if Inputs.is_key_pressed(pygame.K_RETURN):
             if save_game_name and (save_game_name not in available_save_games):
                 input_active = False
