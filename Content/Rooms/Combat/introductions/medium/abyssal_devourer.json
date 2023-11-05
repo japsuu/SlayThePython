@@ -1,0 +1,35 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_4.png",
+  "encountered_at_levels": "5-11",
+  "room_enemies":
+  [
+    {
+      "name": "Abyssal Devourer",
+      "max_health_min": 60,
+      "max_health_max": 70,
+      "sprite_path": "Content/Sprites/Enemies/Abyssal Devourer.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 12
+        },
+        {
+          "gain_health_amount": 8,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 10
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 4,
+          "deal_damage_amount": 4
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 18
+        }
+      ]
+    }
+  ]
+}

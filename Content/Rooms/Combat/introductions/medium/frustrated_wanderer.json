@@ -1,0 +1,35 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_1.png",
+  "encountered_at_levels": "5-11",
+  "room_enemies":
+  [
+    {
+      "name": "Frustrated Wanderer",
+      "max_health_min": 35,
+      "max_health_max": 42,
+      "sprite_path": "Content/Sprites/Enemies/Frustrated Wanderer.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 11
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 7
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 15
+        }
+      ]
+    }
+  ]
+}

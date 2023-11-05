@@ -1,0 +1,73 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_1.png",
+  "encountered_at_levels": "3-7",
+  "room_enemies":
+  [
+    {
+      "name": "Gleeful Apparation",
+      "max_health_min": 10,
+      "max_health_max": 15,
+      "sprite_path": "Content/Sprites/Enemies/Gleeful Apparation.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 5
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 10
+        }
+      ]
+    },
+    {
+      "name": "Gleeful Apparation",
+      "max_health_min": 10,
+      "max_health_max": 15,
+      "sprite_path": "Content/Sprites/Enemies/Gleeful Apparation.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 10
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 5
+        }
+      ]
+    }
+  ]
+}

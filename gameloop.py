@@ -1,6 +1,7 @@
 import pygame
 
 from data.rooms import SpecialRoomAction
+from utils import audio, constants
 from utils.constants import LAYER_TARGETED_ENEMY_ICON, LAYER_CARD_CHOOSE_TITLE, LAYER_PLAYER_UI_BACKGROUND, LAYER_PLAYER_UI_TEXT, LAYER_OVERRIDE_BG, LAYER_OVERRIDE_FG, LAYER_UI_EFFECTS, \
     FONT_CARD_CHOOSE, FONT_DUNGEON_LEVEL, FONT_DUNGEON_LEVEL_HINT, FONT_CARD_PILE_COUNT, FONT_PLAYER_MANA, FONT_PLAYER_HEALTH, FONT_PLAYER_BLOCK, \
     FONT_SPECIAL_ROOM_TITLE, FONT_SPECIAL_ROOM_DESCRIPTION, FONT_HELP
@@ -15,6 +16,10 @@ def update(screen: pygame.Surface, game_state: GameState):
         draw_game_over_screen(screen, game_state)
         return
 
+    if has_player_won(game_state):
+        draw_win_screen(screen, game_state)
+        return
+
     game_state.update_game_objects()
 
     if game_state.card_grid_layout:
@@ -26,12 +31,14 @@ def update(screen: pygame.Surface, game_state: GameState):
     if is_game_paused(screen, game_state):
         return
 
-    if game_state.is_player_choosing_reward_cards:
-        draw_player_reward_cards(screen, game_state)
-        return
-
-    if game_state.is_player_removing_cards:
-        player_remove_cards(screen, game_state)
+    if game_state.is_player_choosing_reward_cards or game_state.is_player_removing_cards:
+        if game_state.is_player_choosing_reward_cards:
+            draw_player_reward_cards(screen, game_state)
+        if game_state.is_player_removing_cards:
+            player_remove_cards(screen, game_state)
+        if (not game_state.is_player_choosing_reward_cards) and (not game_state.is_player_removing_cards):
+            game_state.load_next_room()
+            game_state.save()
         return
 
     if game_state.current_special_room_data:
@@ -52,19 +59,8 @@ def update(screen: pygame.Surface, game_state: GameState):
 
     draw_player_stats(screen, game_state)
 
-    if len(game_state.current_alive_enemy_characters) == 0:  # Player win state
-        if game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index:
-            # The player has defeated the boss, delete the save game and return to the main menu
-            game_state.delete_current_save()
-            return
-        for hand_card in game_state.current_hand:
-            hand_card.on_played()
-            game_state.current_discard_pile.append(hand_card.card_data)
-        game_state.current_hand.clear()
-        game_state.generate_reward_cards()
-        game_state.is_player_choosing_reward_cards = True
-    elif game_state.current_game_save.player_health <= 0:  # Player lose state
-        return
+    if (len(game_state.current_alive_enemy_characters) == 0) and (game_state.current_special_room_data is None):    # Player win state
+        finish_room(game_state, True)
 
     if game_state.gameplay_pause_timer > 0:
         game_state.gameplay_pause_timer -= game_state.delta_time
@@ -109,10 +105,12 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
                         hand_card.create_and_queue_animation(target_pos, card_move_up_duration, 255, 0.2, name="hover")
                         hand_card.is_self_hovered = True
                         hand_card.is_other_card_hovered = False
+                        audio.play_one_shot(constants.card_move_1_sound)
                 else:
                     if hand_card.is_self_hovered:
                         hand_card.create_and_queue_animation(hand_card.home_position, card_move_to_original_pos_duration, 255, 0.2, name="stop hover")
                         hand_card.is_self_hovered = False
+                        audio.play_one_shot(constants.card_move_2_sound)
 
         # Update the player's hand cards (and check if the player clicked a card)
         # Use reverse iteration to get the top-most (actually visible and clicked) card
@@ -150,6 +148,7 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
                 old_card.on_played()
                 game_state.current_discard_pile.append(old_card.card_data)
             game_state.gameplay_pause_timer = 2
+            audio.play_one_shot(constants.end_turn_sound)
     else:
         # Apply enemy intentions
         for enemy in game_state.current_alive_enemy_characters:
@@ -157,12 +156,19 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
                 continue
             enemy.has_completed_turn = True
             enemy_intention = enemy.get_intention(game_state.current_round_index)
-            if enemy_intention.gain_health_amount > 0:
-                enemy.gain_health(enemy_intention.gain_health_amount)
+            if enemy_intention.gain_block_amount < 0:
+                enemy.remove_block(-enemy_intention.gain_block_amount)
+                audio.play_one_shot(constants.blocked_sound)
             if enemy_intention.gain_block_amount > 0:
                 enemy.gain_block(enemy_intention.gain_block_amount)
+                audio.play_one_shot(constants.gain_block_sound)
+            if enemy_intention.gain_health_amount > 0:
+                enemy.gain_health(enemy_intention.gain_health_amount)
+            if enemy_intention.gain_health_amount < 0:
+                enemy.take_damage(-enemy_intention.gain_health_amount)
             if enemy_intention.deal_damage_amount > 0:
                 damage_player(game_state, enemy_intention.deal_damage_amount)
+                audio.play_one_shot(constants.attacked_sound)
             enemy.play_turn_animation(enemy_intention)
             game_state.gameplay_pause_timer = 2
             return
@@ -177,8 +183,11 @@ def damage_player(game_state, amount):
     # Reduce current block by the damage amount
     removed_block = game_state.current_player_block - max(0, game_state.current_player_block - amount)
     remaining_damage = amount - game_state.current_player_block
+    delay = 0.1
     if removed_block > 0:
         game_state.instantiate_damage_number(removed_block, True, (game_state.screen.get_rect().left + 100, game_state.screen.get_rect().bottom - 400), LAYER_UI_EFFECTS)
+        audio.play_one_shot_delayed(constants.blocked_sound, delay)
+        delay += 0.1
     game_state.remove_block(amount)
 
     # Reduce current health by the damage amount
@@ -186,6 +195,8 @@ def damage_player(game_state, amount):
         game_state.current_game_save.player_health = max(game_state.current_game_save.player_health - remaining_damage, 0)
         game_state.play_player_damaged_animation()
         game_state.instantiate_damage_number(remaining_damage, False, (game_state.screen.get_rect().left + 100, game_state.screen.get_rect().bottom - 300), LAYER_UI_EFFECTS)
+        audio.play_one_shot_delayed(constants.damaged_sound, delay)
+        delay += 0.1
 
 
 def clean_up_finished_animations(game_state: GameState):
@@ -195,13 +206,49 @@ def clean_up_finished_animations(game_state: GameState):
             game_state.current_hand.remove(hand_card)
 
 
+def finish_room(game_state: GameState, generate_rewards):
+    for hand_card in game_state.current_hand:
+        hand_card.on_played()
+        game_state.current_discard_pile.append(hand_card.card_data)
+    game_state.current_hand.clear()
+    if generate_rewards:
+        game_state.generate_reward_cards()
+        game_state.is_player_choosing_reward_cards = True
+        audio.play_one_shot(constants.show_rewards_sound)
+    elif game_state.is_player_choosing_reward_cards or game_state.is_player_removing_cards:
+        return  # Don't load the next room yet if the player is choosing reward cards
+    else:
+        game_state.load_next_room()
+        game_state.save()
+
+
 def is_player_dead(game_state):
     return game_state.current_game_save.player_health <= 0
+
+
+def has_player_won(game_state):
+    return (game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index) and (len(game_state.current_alive_enemy_characters) == 0)
 
 
 def draw_game_over_screen(screen, game_state):
     # Draw a game-over text
     text_surface = FONT_DUNGEON_LEVEL.render("Game over!", True, (255, 0, 0))
+    text_rect = text_surface.get_rect()
+    text_rect.center = screen.get_rect().center
+    screen.blit(text_surface, text_rect)
+
+    # Draw a button to return to the main menu
+    button_rect = pygame.Rect(0, 0, 300, 50)
+    button_rect.midtop = (screen.get_rect().centerx, text_rect.bottom + 20)
+    draw_button(game_state.frame_buffer, "Return to main menu", button_rect, (100, 100, 100), (255, 255, 255))
+    if is_rect_clicked(button_rect):
+        # Delete the save game
+        game_state.delete_current_save()
+
+
+def draw_win_screen(screen, game_state):
+    # Draw a win text
+    text_surface = FONT_DUNGEON_LEVEL.render("You won!", True, (0, 255, 0))
     text_rect = text_surface.get_rect()
     text_rect.center = screen.get_rect().center
     screen.blit(text_surface, text_rect)
@@ -261,17 +308,40 @@ def can_play_card(game_state: GameState, card: GameCard):
 def play_card(game_state: GameState, card: GameCard):
     game_state.current_player_mana = max(0, game_state.current_player_mana - card.card_data.card_cost)
     damage_player(game_state, card.card_data.card_self_damage)
+    delay = 0
+    if card.card_data.card_self_damage > 0:
+        audio.play_one_shot_delayed(constants.damaged_sound, delay)
+        delay += 0.1
     game_state.current_player_block = max(0, game_state.current_player_block + card.card_data.card_self_block)
+    if card.card_data.card_self_block > 0:
+        audio.play_one_shot_delayed(constants.gain_block_sound, delay)
+        delay += 0.1
     game_state.current_game_save.player_health = min(game_state.current_game_save.player_health + card.card_data.card_self_heal, 100)
+    if card.card_data.card_self_heal > 0:
+        audio.play_one_shot_delayed(constants.healed_sound, delay)
+        delay += 0.1
     game_state.current_player_mana = max(0, game_state.current_player_mana + card.card_data.card_change_mana)
+    if card.card_data.card_change_mana > 0:
+        audio.play_one_shot_delayed(constants.gain_mana_sound, delay)
+        delay += 0.1
     game_state.change_draw_limit(card.card_data.card_change_draw_limit)
     game_state.change_draw_limit_next_turn(card.card_data.card_change_draw_limit_next_turn)
     game_state.change_mana_limit_this_combat(card.card_data.card_change_mana_limit)
     game_state.change_mana_next_turn(card.card_data.card_change_mana_next_turn)
     game_state.current_game_save.player_base_mana = max(0, game_state.current_game_save.player_base_mana + card.card_data.card_change_mana_limit_permanent)
+    if card.card_data.card_change_mana_limit_permanent > 0:
+        audio.play_one_shot_delayed(constants.gain_mana_sound, delay)
+        delay += 0.1
     if card.card_data.card_target_remove_block > 0:
         if game_state.current_targeted_enemy_character:
             game_state.current_targeted_enemy_character.remove_block(card.card_data.card_target_remove_block)
+    if card.card_data.card_damage_all > 0:
+        for enemy in game_state.current_alive_enemy_characters:
+            enemy.take_damage(card.card_data.card_damage_all)
+            if enemy.current_health <= 0:
+                game_state.current_alive_enemy_characters.remove(enemy)
+                if len(game_state.current_alive_enemy_characters) > 0:
+                    game_state.current_targeted_enemy_character = game_state.current_alive_enemy_characters[0]
     if card.card_data.card_target_damage > 0:
         game_state.current_targeted_enemy_character.take_damage(card.card_data.card_target_damage)
         if game_state.current_targeted_enemy_character.current_health <= 0:
@@ -283,14 +353,19 @@ def play_card(game_state: GameState, card: GameCard):
         game_state.draw_hand_cards(card.card_data.card_draw_additional_cards)
     if card.card_data.delete:
         card.on_played(deleted=True)
+        audio.play_one_shot_delayed(constants.destroy_card_sound, delay)
+        delay += 0.1
     elif card.card_data.exhaust:
         game_state.current_exhaust_pile.append(card.card_data)
         card.on_played(exhausted=True)
+        audio.play_one_shot_delayed(constants.exhaust_card_sound, delay)
+        delay += 0.1
     else:
         game_state.current_discard_pile.append(card.card_data)
         card.on_played()
     if card.card_data.card_draw_additional_cards <= 0:
         game_state.reposition_cards(game_state.current_hand)
+    audio.play_one_shot(constants.play_card_sound)
 
 
 def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
@@ -315,8 +390,6 @@ def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
                 # Card clicked, add it to the player's deck
                 game_state.current_draw_pile.append(card.card_data)
                 game_state.is_player_choosing_reward_cards = False
-                game_state.load_next_room()
-                game_state.save()
     for card in game_state.current_reward_game_cards:
         if is_some_card_hovered and (not card.rect.collidepoint(Inputs.get_mouse_position())):
             if not card.is_other_card_hovered:
@@ -333,8 +406,8 @@ def draw_player_reward_cards(screen: pygame.Surface, game_state: GameState):
                        (0, 200, 0), (0, 50, 0), ["Skip choosing a card."])
     if is_rect_clicked(rect):
         game_state.is_player_choosing_reward_cards = False
-        game_state.load_next_room()
-        game_state.save()
+        audio.play_one_shot_delayed(constants.skip_sound, 0.2)
+        audio.play_one_shot(constants.button_sound)
 
 
 def player_remove_cards(screen: pygame.Surface, game_state: GameState):
@@ -360,12 +433,6 @@ def player_remove_cards(screen: pygame.Surface, game_state: GameState):
                 # Card clicked, remove it from the player's deck
                 game_state.current_removal_game_cards.remove(card)
                 game_state.current_draw_pile.remove(card.card_data)
-                # game_state.current_game_save.player_cards.remove(card.card_data)
-                # print(f"Draw pile has {len(game_state.current_draw_pile)} cards.")
-                # print(f"Exhaust pile has {len(game_state.current_exhaust_pile)} cards.")
-                # print(f"Discard pile has {len(game_state.current_discard_pile)} cards.")
-                # print(f"Save has {len(game_state.current_game_save.player_cards)} cards.")
-                # print(f"Hand has {len(game_state.current_hand)} cards.")
                 game_state.card_grid_layout.remove_item(card)
                 card.on_played(exhausted=True)
                 card.draw_order = LAYER_OVERRIDE_FG
@@ -379,9 +446,17 @@ def player_remove_cards(screen: pygame.Surface, game_state: GameState):
         game_state.current_removal_game_cards.clear()
         game_state.card_grid_layout.clear()
         game_state.is_player_removing_cards = False
+        audio.play_one_shot_delayed(constants.skip_sound, 0.2)
+        audio.play_one_shot(constants.button_sound)
 
 
 def handle_special_room(game_state: GameState):
+    # Draw the player health
+    draw_player_health(game_state, bottom_left_pos=(game_state.screen.get_rect().left + 10, game_state.screen.get_rect().bottom - 10))
+
+    # Draw the current level
+    draw_current_level(game_state.screen, game_state)
+
     # Draw the room name
     text_surface = FONT_SPECIAL_ROOM_TITLE.render(game_state.current_special_room_data.room_name, True, (255, 255, 255))
     text_rect = text_surface.get_rect()
@@ -393,9 +468,6 @@ def handle_special_room(game_state: GameState):
     desc_text_rect = text_surface.get_rect()
     desc_text_rect.midtop = (text_rect.midbottom[0], text_rect.midbottom[1] + 10)
     DrawCall(text_surface, desc_text_rect, LAYER_CARD_CHOOSE_TITLE).queue(game_state.frame_buffer)
-
-    # Draw the player health
-    draw_player_health(game_state, bottom_left_pos=(game_state.screen.get_rect().left + 10, game_state.screen.get_rect().bottom - 10))
 
     # Draw the available actions
     available_actions = game_state.current_special_room_data.room_available_actions
@@ -409,10 +481,12 @@ def handle_special_room(game_state: GameState):
         # if len(action.action_name) > 10:
         #     width = 300
         button_rect = draw_button(game_state.frame_buffer, action.action_name, pygame.Rect(pos_x - 100, pos_y, width, height),
-                                  (0, 200, 0), (0, 50, 0), action.get_effects_text())
+                                  (0, 200, 0), (0, 50, 0), action.get_effects_text(game_state.current_game_save.player_health))
         if is_rect_clicked(button_rect):
             action.execute(game_state)
-            game_state.current_special_room_data = None
+            # game_state.current_special_room_data = None
+            finish_room(game_state, False)
+            audio.play_one_shot(constants.button_sound)
             return
         # Draw the action description
         text_surface = FONT_SPECIAL_ROOM_DESCRIPTION.render(action.action_description, True, (255, 255, 255))
@@ -424,23 +498,7 @@ def handle_special_room(game_state: GameState):
 def draw_player_stats(screen: pygame.Surface, game_state: GameState):
     # TODO: Refactor this function. Split to DrawHealth, DrawMana, DrawBlock, DrawPiles, DrawLevel
     # Draw current level icon
-    width = game_state.game_data.image_library.icon_level.get_width()
-    height = game_state.game_data.image_library.icon_level.get_height()
-    left = screen.get_rect().right - width - 10
-    top = screen.get_rect().top + 60
-    level_icon_rect = pygame.Rect(left, top, width, height)
-    DrawCall(game_state.game_data.image_library.icon_level, level_icon_rect, LAYER_PLAYER_UI_BACKGROUND, ["Current room.", "The last room is a boss room."]).queue(game_state.frame_buffer)
-
-    # Draw current level text
-    level_text_surface = FONT_DUNGEON_LEVEL.render(f"{game_state.current_game_save.dungeon_room_index + 1} / {game_state.game_data.boss_room_index + 1}", True, (255, 255, 255))
-    level_text_rect = level_text_surface.get_rect()
-    level_text_rect.center = (level_icon_rect.centerx, level_icon_rect.centery)
-    DrawCall(level_text_surface, level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state.frame_buffer)
-    if game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index:
-        boss_level_text_surface = FONT_DUNGEON_LEVEL_HINT.render("(boss room)", True, (255, 255, 255))
-        boss_level_text_rect = boss_level_text_surface.get_rect()
-        boss_level_text_rect.midtop = level_text_rect.midbottom
-        DrawCall(boss_level_text_surface, boss_level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state.frame_buffer)
+    draw_current_level(screen, game_state)
 
     # Draw pile icon
     width = game_state.game_data.image_library.icon_draw_pile.get_width()
@@ -506,6 +564,27 @@ def draw_player_stats(screen: pygame.Surface, game_state: GameState):
         shield_text_rect = shield_text_surface.get_rect()
         shield_text_rect.center = shield_icon_rect.center
         DrawCall(shield_text_surface, shield_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state.frame_buffer)
+
+
+def draw_current_level(screen: pygame.Surface, game_state: GameState):
+    width = game_state.game_data.image_library.icon_level.get_width()
+    height = game_state.game_data.image_library.icon_level.get_height()
+    left = screen.get_rect().right - width - 10
+    top = screen.get_rect().top + 60
+    level_icon_rect = pygame.Rect(left, top, width, height)
+    DrawCall(game_state.game_data.image_library.icon_level, level_icon_rect, LAYER_PLAYER_UI_BACKGROUND, ["Current room.", "The last room is a boss room."]).queue(game_state.frame_buffer)
+
+    # Draw current level text
+    level_text_surface = FONT_DUNGEON_LEVEL.render(f"{game_state.current_game_save.dungeon_room_index + 1} / {game_state.game_data.boss_room_index + 1}", True, (255, 255, 255))
+    level_text_rect = level_text_surface.get_rect()
+    level_text_rect.center = (level_icon_rect.centerx, level_icon_rect.centery)
+    DrawCall(level_text_surface, level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state.frame_buffer)
+    if game_state.current_game_save.dungeon_room_index == game_state.game_data.boss_room_index:
+        boss_level_text_surface = FONT_DUNGEON_LEVEL_HINT.render("(boss room)", True, (255, 255, 255))
+        boss_level_text_rect = boss_level_text_surface.get_rect()
+        boss_level_text_rect.midtop = level_text_rect.midbottom
+        DrawCall(boss_level_text_surface, boss_level_text_rect, LAYER_PLAYER_UI_TEXT).queue(game_state.frame_buffer)
+    return level_icon_rect
 
 
 def draw_player_health(game_state: GameState, top_left_pos=None, bottom_left_pos=None) -> pygame.Rect:
@@ -610,14 +689,17 @@ def is_game_paused(screen, game_state) -> bool:
 
     if is_main_menu_button_pressed(game_state, pause_background_rect):
         game_state.exit_current_save()
+        audio.play_one_shot(constants.button_sound)
         return True
 
     if is_abandon_button_pressed(game_state, pause_background_rect):
         game_state.delete_current_save()
+        audio.play_one_shot(constants.button_sound)
         return True
 
     if is_help_button_pressed(game_state, pause_background_rect):
         game_state.is_help_shown = not game_state.is_help_shown
+        audio.play_one_shot(constants.button_sound)
 
     if game_state.is_help_shown:
         # WARN: We are regenerating the pygame surface every frame here. This is not optimal.

@@ -1,0 +1,121 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_3.png",
+  "encountered_at_levels": "0-0",
+  "room_enemies":
+  [
+    {
+      "name": "Sorcerer Monarch",
+      "max_health_min": 70,
+      "max_health_max": 90,
+      "sprite_path": "Content/Sprites/Bosses/Sorcerer Monarch Boss.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 6,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 8,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 20
+        }
+      ]
+    },
+    {
+      "name": "Sorcerer Monarch",
+      "max_health_min": 70,
+      "max_health_max": 90,
+      "sprite_path": "Content/Sprites/Bosses/Sorcerer Monarch Boss.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 6,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 20
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        }
+      ]
+    },
+    {
+      "name": "Sorcerer Monarch",
+      "max_health_min": 70,
+      "max_health_max": 90,
+      "sprite_path": "Content/Sprites/Bosses/Sorcerer Monarch Boss.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 6
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 6,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 8,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 20
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_4.png",
+  "encountered_at_levels": "10-16",
+  "room_enemies":
+  [
+    {
+      "name": "Ironfist Ogre",
+      "max_health_min": 150,
+      "max_health_max": 160,
+      "sprite_path": "Content/Sprites/Enemies/Ironfist Ogre.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 16
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 12,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 22
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 8,
+          "deal_damage_amount": 0
+        }
+      ]
+    }
+  ]
+}

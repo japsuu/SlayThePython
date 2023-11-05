@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 
+from utils import audio, constants
 from utils.drawing import Drawable, TextTooltip
+from utils.input import Inputs
 from utils.logging import log_warning, log_info
 
 if TYPE_CHECKING:
@@ -12,7 +14,8 @@ import pygame
 import numpy as np
 
 from utils.constants import LAYER_ENEMY, LAYER_PLAYER_HAND, LAYER_EFFECTS, LAYER_DEFAULT, ANIM_PRIORITY_CARD_DRAW, ANIM_PRIORITY_CARD_DISCARD, ANIM_PRIORITY_DEFAULT, FONT_ENEMY_HEALTH, \
-    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST, ANIM_PRIORITY_CARD_REPOSITION
+    FONT_ENEMY_ICON_HINT, FONT_ENEMY_DAMAGE_EFFECT, FONT_CARD_NAME, FONT_CARD_DESCRIPTION, FONT_CARD_MANA_COST, ANIM_PRIORITY_CARD_REPOSITION, ENEMY_SPRITE_SCALING_FACTOR, SYMBOLS_FONT, \
+    SYMBOLS_FONT_BG
 from data.cards import CardData
 from data.enemies import EnemySpawnData, EnemyIntentionData
 from utils.animations import Animation, Tween, GetterTween, GetterTupleTween
@@ -209,8 +212,12 @@ class EnemyCharacter(GameObject):
                  damage_effect_font):
         self.enemy_spawn_data: EnemySpawnData = enemy_spawn_data
         self.image_library: ImageLibrary = image_library
-        self.normal_image = load_image(self.enemy_spawn_data.sprite_path)
-        self.damaged_image = load_image(self.enemy_spawn_data.damaged_sprite_path)
+        loaded_image = load_image(self.enemy_spawn_data.sprite_path)
+        self.normal_image = pygame.transform.scale(loaded_image, (loaded_image.get_rect().width * ENEMY_SPRITE_SCALING_FACTOR, loaded_image.get_rect().height * ENEMY_SPRITE_SCALING_FACTOR))
+        # Insert "_damaged" before the file extension
+        damage_sprite_path = self.get_sprite_variant_path("_damaged")
+        loaded_image = load_image(damage_sprite_path)
+        self.damaged_image = pygame.transform.scale(loaded_image, (loaded_image.get_rect().width * ENEMY_SPRITE_SCALING_FACTOR, loaded_image.get_rect().height * ENEMY_SPRITE_SCALING_FACTOR))
         super().__init__(game_object_collection, self.normal_image, position, LAYER_ENEMY)
         self.damaged_image.set_alpha(0)
         self.damage_animation: Optional[Animation] = None
@@ -295,14 +302,6 @@ class EnemyCharacter(GameObject):
         # Reduce current block by the damage amount
         remaining_damage = amount - self.current_block
         self.remove_block(amount)
-        removed_block = min(self.current_block, amount)
-
-        # Draw a "block lost" number effect. TODO: Use the game-state's factory
-        if removed_block > 0:
-            text_color = (0, 0, 255)
-            offset = get_random_inside_rect(100)
-            position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
-            self.__instantiate_damage_number_effect(position, removed_block, text_color)
 
         # Reduce current health by the damage amount
         if remaining_damage > 0:
@@ -312,6 +311,7 @@ class EnemyCharacter(GameObject):
             offset = get_random_inside_rect(100)
             position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
             self.__instantiate_damage_number_effect(position, remaining_damage, text_color)
+            audio.play_one_shot_delayed(constants.damaged_sound, 0.1)
 
         # Play the damage animation
         self.damage_animation = Animation([
@@ -325,20 +325,35 @@ class EnemyCharacter(GameObject):
 
         if self.current_health <= 0:
             self.destroy()
+            audio.play_one_shot_delayed(constants.killed_sound, 0.15)
 
     def __instantiate_damage_number_effect(self, position, damage_amount, color):
         self.damage_number_visual_effect_factory.set_target_text(f"-{damage_amount}")
         self.damage_number_visual_effect_factory.set_target_color(color)
         self.damage_number_visual_effect_factory.instantiate(position)
 
+    def get_sprite_variant_path(self, variant_name):
+        return self.enemy_spawn_data.sprite_path[:-4] + variant_name + self.enemy_spawn_data.sprite_path[-4:]
+
     def gain_health(self, amount):
         self.current_health = min(self.current_health + amount, self.max_health)
+        audio.play_one_shot_delayed(constants.healed_sound, 0.05)
 
     def gain_block(self, amount):
         self.current_block += amount
 
     def remove_block(self, amount):
+        old_block = self.current_block
         self.current_block = max(self.current_block - amount, 0)
+        removed_block = old_block - self.current_block
+
+        # Draw a "block lost" number effect.
+        if removed_block > 0:
+            text_color = (0, 0, 255)
+            offset = get_random_inside_rect(100)
+            position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
+            self.__instantiate_damage_number_effect(position, removed_block, text_color)
+            audio.play_one_shot_delayed(constants.blocked_sound, 0.05)
 
     def get_intention(self, turn_index):
         # Get the intention for the current turn index. Use modulo to loop the pattern.
@@ -347,8 +362,9 @@ class EnemyCharacter(GameObject):
         return intention
 
     def play_turn_animation(self, intention: EnemyIntentionData):
-        sprite_path = intention.turn_sprite_path
-        self.turn_sprite = load_image(sprite_path)
+        sprite_path = self.get_sprite_variant_path(intention.get_turn_sprite_path_prefix())
+        loaded_image = load_image(sprite_path)
+        self.turn_sprite = pygame.transform.scale(loaded_image, (loaded_image.get_rect().width * ENEMY_SPRITE_SCALING_FACTOR, loaded_image.get_rect().height * ENEMY_SPRITE_SCALING_FACTOR))
         self.turn_animation = Animation([
             Tween(255, 0, 1, self.__update_turn_sprite_alpha),
             Tween(0, 255, 1.5, self.__update_normal_sprite_alpha, self.__hide_intentions)
@@ -370,12 +386,19 @@ class EnemyCharacter(GameObject):
         next_intention = self.get_intention(current_round_index)
         has_shown_intentions = False
         next_rect_pos: tuple[int, int] = self.health_bar_background_rect.topleft
-        if next_intention.gain_health_amount > 0:
-            icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_buff, next_rect_pos)
+        negative_icon = self.image_library.icon_intention_negative
+        if next_intention.gain_health_amount != 0:
+            if next_intention.gain_health_amount < 0:
+                icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_buff, next_rect_pos, negative_icon)
+            else:
+                icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_buff, next_rect_pos)
             next_rect_pos = icon_rect.bottomright
             has_shown_intentions = True
-        if next_intention.gain_block_amount > 0:
-            icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_block, next_rect_pos)
+        if next_intention.gain_block_amount != 0:
+            if next_intention.gain_block_amount < 0:
+                icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_block, next_rect_pos, negative_icon)
+            else:
+                icon_rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_block, next_rect_pos)
             next_rect_pos = icon_rect.bottomright
             has_shown_intentions = True
         if next_intention.deal_damage_amount > 0:
@@ -401,10 +424,14 @@ class EnemyCharacter(GameObject):
         self.set_tooltip_text(tooltip_lines)
 
     @staticmethod
-    def __draw_intention_icon(screen, icon, position):
+    def __draw_intention_icon(screen, icon, position, overlay_icon=None):
         icon_rect = pygame.Rect(0, 0, icon.get_width(), icon.get_height())
         icon_rect.bottomleft = position
         screen.blit(icon, icon_rect)
+        if overlay_icon:
+            icon_rect_o = pygame.Rect(0, 0, overlay_icon.get_width(), overlay_icon.get_height())
+            icon_rect_o.center = icon_rect.center
+            screen.blit(icon, icon_rect_o)
         return icon_rect
 
 
@@ -437,7 +464,7 @@ class GameCard(GameObject):
         self.has_been_played = False
         self.is_self_hovered = False
         self.is_other_card_hovered = False
-        self.can_be_clicked = False     # NOTE: This can cause unexpected behaviour.
+        self.can_be_clicked = False     # NOTE: This may cause unexpected behaviour.
         self.alpha = 255
 
         self.original_card_image = load_image(self.card_data.sprite_path)
@@ -453,9 +480,14 @@ class GameCard(GameObject):
 
         super().__init__(game_object_collection, image_copy, card_position, LAYER_PLAYER_HAND, name=f"Card {self.card_data.card_info_name}")
         self.blocks_tooltips = True
+        self.__update_tooltip()
+
+    def __update_tooltip(self):
         generated_tooltip_lines = self.__generate_tooltip_lines()
         if len(generated_tooltip_lines) > 0:
             self.set_tooltip_text(generated_tooltip_lines)
+        elif self.tooltip:
+            self.tooltip = None
 
     def __generate_tooltip_lines(self):
         tooltip_lines = []
@@ -550,13 +582,46 @@ class GameCard(GameObject):
         # Draw card name
         name_surface = self.card_name_font.render(self.card_data.card_info_name, True, self.card_info_text_color)
         name_rect = name_surface.get_rect()
-        name_rect.midtop = (self.rect.centerx + 20, self.rect.top + 35)
+        name_rect.midtop = (self.rect.centerx + 20, self.rect.top + 30)
         size = (name_surface.get_width() * self.current_scale_factor, name_surface.get_height() * self.current_scale_factor)
         name_surface.set_alpha(self.alpha)
         screen.blit(pygame.transform.scale(name_surface, size), name_rect)
 
+        # Draw rarity
+        rarity_stars = 1
+        previous_x = self.rect.centerx - 110
+        color = (255, 255, 255)
+        if self.card_data.card_rarity == "uncommon":
+            rarity_stars = 2
+            color = (0, 255, 0)
+        elif self.card_data.card_rarity == "rare":
+            rarity_stars = 3
+            color = (255, 0, 255)
+        last_rarity_rect = None
+        for i in range(rarity_stars):
+            rarity_bg_surface = SYMBOLS_FONT_BG.render("I", True, (0, 0, 0))
+            rarity_bg_rect = rarity_bg_surface.get_rect()
+            rarity_bg_rect.topleft = (previous_x, self.rect.bottom - 55)
+            previous_x = rarity_bg_rect.right + 5
+            size = (rarity_bg_surface.get_width() * self.current_scale_factor, rarity_bg_surface.get_height() * self.current_scale_factor)
+            rarity_bg_surface.set_alpha(self.alpha)
+            last_rarity_rect = rarity_bg_rect
+            screen.blit(pygame.transform.scale(rarity_bg_surface, size), rarity_bg_rect)
+            rarity_surface = SYMBOLS_FONT.render("I", True, color)
+            rarity_rect = rarity_surface.get_rect()
+            rarity_rect.center = rarity_bg_rect.center
+            size = (rarity_surface.get_width() * self.current_scale_factor, rarity_surface.get_height() * self.current_scale_factor)
+            rarity_surface.set_alpha(self.alpha)
+            screen.blit(pygame.transform.scale(rarity_surface, size), rarity_rect)
+        if last_rarity_rect:
+            rarity_tooltip_rect = pygame.Rect(self.rect.centerx - 115, self.rect.bottom - 60, (last_rarity_rect.width + 5) * rarity_stars, last_rarity_rect.height + 5)
+            if rarity_tooltip_rect.collidepoint(Inputs.get_mouse_position()):
+                self.set_tooltip_text(["Rarity:", self.card_data.card_rarity.capitalize()])
+            elif self.tooltip and (self.tooltip.text_lines == ["Rarity:", self.card_data.card_rarity.capitalize()]):
+                self.__update_tooltip()
+
         # Draw card description
-        previous_description_midbottom = (self.rect.centerx, self.rect.bottom - 150)
+        previous_description_midbottom = (self.rect.centerx + 5, self.rect.bottom - 150)
         for description in self.card_data.card_info_description.split("\n"):
             description_surface = self.card_description_font.render(description, True, self.card_description_text_color)
             description_rect = description_surface.get_rect()
@@ -569,7 +634,7 @@ class GameCard(GameObject):
         # Draw card cost
         cost_surface = self.card_mana_cost_font.render(f"{self.card_data.card_cost}", True, self.card_info_mana_text_color)
         cost_rect = cost_surface.get_rect()
-        cost_rect.center = (self.rect.topleft[0] + 50, self.rect.topleft[1] + 48)
+        cost_rect.center = (self.rect.topleft[0] + 50, self.rect.topleft[1] + 44)
         size = (cost_surface.get_width() * self.current_scale_factor, cost_surface.get_height() * self.current_scale_factor)
         cost_surface.set_alpha(self.alpha)
         screen.blit(pygame.transform.scale(cost_surface, size), cost_rect)

@@ -1,0 +1,30 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_3.png",
+  "encountered_at_levels": "5-11",
+  "room_enemies":
+  [
+    {
+      "name": "Angry Zombietta",
+      "max_health_min": 15,
+      "max_health_max": 19,
+      "sprite_path": "Content/Sprites/Enemies/Angry Zombietta.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 6,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 5,
+          "deal_damage_amount": 8
+        },
+        {
+          "gain_health_amount": 11,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "room_background_sprite_path": "Content/Sprites/Rooms/room_bg_4.png",
+  "encountered_at_levels": "5-11",
+  "room_enemies":
+  [
+    {
+      "name": "Emerald Sorceress",
+      "max_health_min": 40,
+      "max_health_max": 61,
+      "sprite_path": "Content/Sprites/Enemies/Emerald Sorceress.png",
+      "intention_pattern": [
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 25,
+          "deal_damage_amount": 0
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 20
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 15,
+          "deal_damage_amount": 10
+        },
+        {
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 10
+        },
+        {
+          "gain_health_amount": 8,
+          "gain_block_amount": 0,
+          "deal_damage_amount": 25
+        }
+      ]
+    }
+  ]
+}
