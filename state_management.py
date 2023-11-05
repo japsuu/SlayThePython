@@ -149,7 +149,7 @@ class GameState:
         elif room_index == 0:
             selected_room_data: RoomData = random.choice(self.game_data.available_room_difficulties[0])
         # Selecting a special room. After 2 rooms 20% chance
-        elif room_index > 1 and len(self.game_data.available_special_rooms) > 0 and random.random() < 1.2:  # WARN: For testing purposes, the chance is increased to 100%
+        elif room_index > 1 and len(self.game_data.available_special_rooms) > 0 and random.random() < 0.2:
             # Select a pool of special rooms based on rarity
             selected_rarity = random.choices(list(SpecialRoomData.rarity_weights.keys()), list(SpecialRoomData.rarity_weights.values()))[0]
 
