@@ -1,7 +1,7 @@
 {
   "rarity": "uncommon",
   "room_name": "Tree room",
-  "room_description": "You enter a chamber filled with the corpses of failed adventurers. There's an old tree in the middle of the room, with a chest at its base.",
+  "room_description": "There's an old tree in the middle of the room, with a chest at its base.",
   "room_background_sprite_path": "Content/Sprites/Rooms/Special/room_bg_tree.png",
   "room_available_actions":
   [

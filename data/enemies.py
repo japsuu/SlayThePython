@@ -57,12 +57,13 @@ class EnemyIntentionData:
 
 
 class EnemySpawnData:
-    def __init__(self, name, max_health_min, max_health_max, sprite_path, intention_pattern):
+    def __init__(self, name, max_health_min, max_health_max, sprite_path, intention_pattern, extras):
         self.name: str = name
         self.max_health_min: int = max_health_min
         self.max_health_max: int = max_health_max
         self.sprite_path: str = sprite_path
         self.intention_pattern: List[EnemyIntentionData] = [EnemyIntentionData.from_dict(data) for data in intention_pattern]
+        self.extras: List[str] = extras
 
     def to_dict(self):
         return {
@@ -70,7 +71,8 @@ class EnemySpawnData:
             "max_health_min": self.max_health_min,
             "max_health_max": self.max_health_max,
             "sprite_path": self.sprite_path,
-            "intention_pattern": self.intention_pattern
+            "intention_pattern": self.intention_pattern,
+            "extras": self.extras
         }
 
     @classmethod
@@ -80,5 +82,6 @@ class EnemySpawnData:
             data["max_health_min"],
             data["max_health_max"],
             data["sprite_path"],
-            data["intention_pattern"]
+            data["intention_pattern"],
+            data["extras"]
         )

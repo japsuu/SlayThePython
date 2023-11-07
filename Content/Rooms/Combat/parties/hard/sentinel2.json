@@ -11,24 +11,27 @@
       "intention_pattern": [
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 16
         },
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 18
         },
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 10
         },
         {
-          "gain_health_amount": -9999,
-          "gain_block_amount": -9999,
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
           "deal_damage_amount": 0
         }
+      ],
+      "extras": [
+        "dies_after_turns,4"
       ]
     },
     {
@@ -39,24 +42,27 @@
       "intention_pattern": [
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 16
         },
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 18
         },
         {
           "gain_health_amount": 0,
-          "gain_block_amount": 999,
+          "gain_block_amount": 0,
           "deal_damage_amount": 10
         },
         {
-          "gain_health_amount": -9999,
-          "gain_block_amount": -9999,
+          "gain_health_amount": 0,
+          "gain_block_amount": 0,
           "deal_damage_amount": 0
         }
+      ],
+      "extras": [
+        "dies_after_turns,4"
       ]
     }
   ]
