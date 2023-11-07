@@ -237,6 +237,11 @@ class EnemyCharacter(GameObject):
         self.visual_effect_factory = RandomVisualEffectFactory(self.game_object_collection, self.image_library.slash_effects_list, 1000)
         self.damage_number_visual_effect_factory = DamageNumberVisualEffectFactory(self.game_object_collection, self.damage_effect_font, "0", self.text_color, 3000)
         self.set_tooltip_text([enemy_spawn_data.name])
+        self.dies_after_turns = 999
+        if self.enemy_spawn_data.extras:
+            for extra in self.enemy_spawn_data.extras:
+                if "dies_after_turns" in extra:
+                    self.dies_after_turns = int(extra.split(",")[1])
 
     def update(self, delta_time):
         super().update(delta_time)
@@ -342,13 +347,13 @@ class EnemyCharacter(GameObject):
     def gain_block(self, amount):
         self.current_block += amount
 
-    def remove_block(self, amount):
+    def remove_block(self, amount, draw_effect=True):
         old_block = self.current_block
         self.current_block = max(self.current_block - amount, 0)
         removed_block = old_block - self.current_block
 
         # Draw a "block lost" number effect.
-        if removed_block > 0:
+        if (removed_block > 0) and draw_effect:
             text_color = (0, 0, 255)
             offset = get_random_inside_rect(100)
             position = (self.rect.center[0] + offset[0], (self.rect.top + self.rect.height / 4) + offset[1])
@@ -414,13 +419,21 @@ class EnemyCharacter(GameObject):
 
             has_shown_intentions = True
         if not has_shown_intentions:  # If no intentions are shown, display the "unknown intentions" icon
-            self.__draw_intention_icon(screen, self.image_library.icon_intention_unknown, next_rect_pos)
+            rect = self.__draw_intention_icon(screen, self.image_library.icon_intention_unknown, next_rect_pos)
+            next_rect_pos = rect.bottomright
 
         tooltip_lines = [self.enemy_spawn_data.name]
         intentions = next_intention.get_description()
         if intentions:
             tooltip_lines.append("")
             tooltip_lines.extend(intentions)
+        if self.dies_after_turns < 10:
+            tooltip_lines.append("")
+            if self.dies_after_turns == 1:
+                tooltip_lines.append(f"Dies next turn.")
+            else:
+                tooltip_lines.append(f"Dies after {self.dies_after_turns} turns.")
+            self.__draw_intention_icon(screen, self.image_library.icon_intention_die, next_rect_pos)
         self.set_tooltip_text(tooltip_lines)
 
     @staticmethod

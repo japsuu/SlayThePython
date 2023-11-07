@@ -54,6 +54,8 @@
           "gain_block_amount": 0,
           "deal_damage_amount": 0
         }
+      ],
+      "extras": [
       ]
     },
     {
@@ -112,6 +114,8 @@
           "gain_block_amount": 12,
           "deal_damage_amount": 0
         }
+      ],
+      "extras": [
       ]
     }
   ]

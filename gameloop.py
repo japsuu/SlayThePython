@@ -64,7 +64,7 @@ def update(screen: pygame.Surface, game_state: GameState):
 
     if game_state.gameplay_pause_timer > 0:
         game_state.gameplay_pause_timer -= game_state.delta_time
-        return  # Don't update the game if it's paused
+        return  # Don't update the game if it's paused. TODO: Move this further up, so that we can have more "transitions".
 
     update_characters_turns(screen, game_state)
 
@@ -141,7 +141,7 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
         if is_end_turn_button_pressed(game_state):
             game_state.is_players_turn = False
             for enemy in game_state.current_alive_enemy_characters:
-                enemy.remove_block(9999)
+                enemy.remove_block(9999, False)
                 enemy.has_completed_turn = False
 
             for old_card in game_state.current_hand:
@@ -156,6 +156,7 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
                 continue
             enemy.has_completed_turn = True
             enemy_intention = enemy.get_intention(game_state.current_round_index)
+            enemy.play_turn_animation(enemy_intention)
             if enemy_intention.gain_block_amount < 0:
                 enemy.remove_block(-enemy_intention.gain_block_amount)
                 audio.play_one_shot(constants.blocked_sound)
@@ -169,7 +170,14 @@ def update_characters_turns(screen: pygame.Surface, game_state: GameState):
             if enemy_intention.deal_damage_amount > 0:
                 damage_player(game_state, enemy_intention.deal_damage_amount)
                 audio.play_one_shot(constants.attacked_sound)
-            enemy.play_turn_animation(enemy_intention)
+            if enemy.dies_after_turns > 0:
+                enemy.dies_after_turns -= 1
+                if enemy.dies_after_turns < 1:
+                    enemy.take_damage(9999)
+            if enemy.current_health <= 0:
+                game_state.current_alive_enemy_characters.remove(enemy)
+                if len(game_state.current_alive_enemy_characters) > 0:
+                    game_state.current_targeted_enemy_character = game_state.current_alive_enemy_characters[0]
             game_state.gameplay_pause_timer = 2
             return
 

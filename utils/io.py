@@ -63,6 +63,7 @@ class ImageLibrary:
         self.icon_intention_damage_medium: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_damage_medium.png")
         self.icon_intention_damage_high: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_damage_high.png")
         self.icon_intention_damage_veryhigh: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_damage_veryhigh.png")
+        self.icon_intention_die: pygame.Surface = load_image("Content/Sprites/UI/icon_intention_die.png")
 
         # Effects
         self.effect_damaged_self: pygame.Surface = load_image("Content/Sprites/Effects/effect_damaged_self.png")

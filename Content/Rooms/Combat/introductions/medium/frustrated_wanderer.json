@@ -29,6 +29,8 @@
           "gain_block_amount": 0,
           "deal_damage_amount": 15
         }
+      ],
+      "extras": [
       ]
     }
   ]
